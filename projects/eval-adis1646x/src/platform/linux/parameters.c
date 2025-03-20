@@ -1,9 +1,10 @@
 /***************************************************************************//**
- *   @file   platform_includes.h
- *   @brief  Includes for used platforms used by eval-adis1646x project.
- *   @author RBolboac (ramona.gradinariu@analog.com)
+ *   @file   parameters.c
+ *   @brief  Definitions specific to Linux platform used by ad9545
+ *           project.
+ *   @author Jonathan Santos (jonathan.santos@analog.com)
 ********************************************************************************
- * Copyright 2023(c) Analog Devices, Inc.
+ * Copyright 2024(c) Analog Devices, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,27 +32,4 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef __PLATFORM_INCLUDES_H__
-#define __PLATFORM_INCLUDES_H__
-
-#ifdef LINUX_PLATFORM
-#include "linux/parameters.h"
-#endif
-
-#ifdef PICO_PLATFORM
-#include "pico/parameters.h"
-#endif
-
-#ifdef MAXIM_PLATFORM
-#include "maxim/parameters.h"
-#endif
-
-#ifdef STM32_PLATFORM
-#include "stm32/parameters.h"
-#endif
-
-#ifdef IIO_SUPPORT
-#include "iio_app.h"
-#endif
-
-#endif /* __PLATFORM_INCLUDES_H__ */
+#include "parameters.h"

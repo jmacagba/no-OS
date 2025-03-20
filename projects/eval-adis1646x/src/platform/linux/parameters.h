@@ -1,10 +1,10 @@
 /***************************************************************************//**
- *   @file   platform_includes.h
- *   @brief  Includes for used platforms used by eval-adis1646x project.
- *   @author RBolboac (ramona.gradinariu@analog.com)
+ *   @file   parameters.h
+ *   @brief  Definitions specific to Linux platform used by eval-adis1646x
+ *           project.
+ *   @author Jamila Macagba (Jamila.Macagba@analog.com)
 ********************************************************************************
- * Copyright 2023(c) Analog Devices, Inc.
- *
+ * Copyright 2025
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -30,28 +30,17 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
+#ifndef __PARAMETERS_H__
+#define __PARAMETERS_H__
 
-#ifndef __PLATFORM_INCLUDES_H__
-#define __PLATFORM_INCLUDES_H__
+#include <stdbool.h>
+#include <stdint.h>
+#include "linux_spi.h"
 
-#ifdef LINUX_PLATFORM
-#include "linux/parameters.h"
-#endif
+#define SPI_DEVICE_ID	0
+#define SPI_CS		0
+#define SPI_BAUDRATE	1000000
+#define SPI_OPS		&linux_spi_ops
+#define SPI_EXTRA	NULL
 
-#ifdef PICO_PLATFORM
-#include "pico/parameters.h"
-#endif
-
-#ifdef MAXIM_PLATFORM
-#include "maxim/parameters.h"
-#endif
-
-#ifdef STM32_PLATFORM
-#include "stm32/parameters.h"
-#endif
-
-#ifdef IIO_SUPPORT
-#include "iio_app.h"
-#endif
-
-#endif /* __PLATFORM_INCLUDES_H__ */
+#endif /* __PARAMETERS_H__ */
