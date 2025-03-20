@@ -33,14 +33,21 @@
 #ifndef __PARAMETERS_H__
 #define __PARAMETERS_H__
 
+#include "common_data.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include "linux_spi.h"
+#include "linux_gpio.h"
 
 #define SPI_DEVICE_ID	0
 #define SPI_CS		0
 #define SPI_BAUDRATE	1000000
 #define SPI_OPS		&linux_spi_ops
 #define SPI_EXTRA	NULL
+
+#define GPIO_RESET_PIN_NUM   0 /* Not used for linux platform */
+#define GPIO_RESET_PORT_NUM  NULL /* Not used for linux platform */
+#define GPIO_OPS            &linux_gpio_ops
+#define GPIO_EXTRA          NULL /* Not used for linux platform */
 
 #endif /* __PARAMETERS_H__ */
