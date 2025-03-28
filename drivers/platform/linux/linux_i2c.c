@@ -79,6 +79,7 @@ int32_t linux_i2c_init(struct no_os_i2c_desc **desc,
 	linux_init = param->extra;
 
 	snprintf(path, sizeof(path), "/dev/i2c-%d", linux_init->device_id);
+	printf("%s: Open %s\n\r", __func__, path); // DEBUG
 
 	linux_desc->fd = open(path, O_RDWR);
 	if (linux_desc->fd < 0) {
@@ -89,7 +90,7 @@ int32_t linux_i2c_init(struct no_os_i2c_desc **desc,
 	descriptor->slave_address = param->slave_address;
 
 	*desc = descriptor;
-
+	printf("%s: descriptor->slave_address %d\n\r", __func__, param->slave_address); // DEBUG
 	return 0;
 
 free:
@@ -143,18 +144,24 @@ int32_t linux_i2c_write(struct no_os_i2c_desc *desc,
 	int32_t ret;
 
 	linux_desc = desc->extra;
-
+	printf("%s: ioctl I2C_SLAVE %d\n\r", __func__, I2C_SLAVE); // DEBUG
+	printf("%s: ioctl desc->slave_address %d\n\r", __func__, desc->slave_address); // DEBUG
 	ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
 	if (ret < 0) {
 		printf("%s: Can't select device\n\r", __func__);
 		return -1;
 	}
 
+	printf("%s: write bytes_number %d\n\r", __func__, bytes_number);
+	printf("%s: write data 0x%X\n\r", __func__, *data); // DEBUG
 	ret = write(linux_desc->fd, data, bytes_number);
 	if (ret < 0) {
 		printf("%s: Can't write to file\n\r", __func__);
 		return -1;
 	}
+
+	printf("%s: ret %d\n\r", __func__, ret); // DEBUG
+	printf("%s: Data write 0x%X\n\r", __func__, *data); // DEBUG
 
 	if (stop_bit) {
 		// Unused variable - fix compiler warning
@@ -183,18 +190,24 @@ int32_t linux_i2c_read(struct no_os_i2c_desc *desc,
 
 	linux_desc = desc->extra;
 
+	printf("%s: ioctl I2C_SLAVE %d\n\r", __func__, I2C_SLAVE); // DEBUG
+	printf("%s: ioctl desc->slave_address %d\n\r", __func__, desc->slave_address); // DEBUG
 	ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
 	if (ret < 0) {
 		printf("%s: Can't select device\n\r", __func__);
 		return -1;
 	}
 
+	printf("%s: read bytes_number %d\n\r", __func__, bytes_number); // DEBUG
+	printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
 	ret = read(linux_desc->fd, data, bytes_number);
+	perror("Return"); // DEBUG
 	if (ret < 0) {
 		printf("%s: Can't read from file\n\r", __func__);
 		return -1;
 	}
-
+	printf("%s: ret %d\n\r", __func__, ret); // DEBUG
+	printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
 	if (stop_bit) {
 		// Unused variable - fix compiler warning
 	}

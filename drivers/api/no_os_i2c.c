@@ -37,6 +37,7 @@
 #include "no_os_error.h"
 #include "no_os_mutex.h"
 #include "no_os_alloc.h"
+#include "no_os_print_log.h" // DEBUG
 
 /**
  * @brief i2c_table contains the pointers towards the i2c buses
@@ -53,7 +54,8 @@ int32_t no_os_i2c_init(struct no_os_i2c_desc **desc,
 		       const struct no_os_i2c_init_param *param)
 {
 	int32_t ret;
-
+	pr_notice("Start no_os_i2c_init\n"); // DEBUG
+	pr_notice("Value of param->platform_ops is %d\n", param->platform_ops); // DEBUG
 	if (!param || !param->platform_ops)
 		return -EINVAL;
 
@@ -74,7 +76,7 @@ int32_t no_os_i2c_init(struct no_os_i2c_desc **desc,
 	(*desc)->bus = i2c_table[param->device_id];
 	(*desc)->bus->slave_number++;
 	(*desc)->platform_ops = param->platform_ops;
-
+	pr_notice("End no_os_i2c_init\n"); // DEBUG
 	return 0;
 }
 
@@ -162,18 +164,25 @@ int32_t no_os_i2c_write(struct no_os_i2c_desc *desc,
 			uint8_t stop_bit)
 {
 	int32_t ret;
-
+	pr_notice("Start no_os_i2c_write\n"); // DEBUG
+	// DEBUG
+	for(int i=0; i<bytes_number;i++)
+	{
+		printf("0x%02X ", data[i]);
+	}
+	printf("\n");
+	
 	if (!desc || !desc->platform_ops)
 		return -EINVAL;
 
 	if (!desc->platform_ops->i2c_ops_write)
 		return -ENOSYS;
-
+	pr_notice("write 0x%X\n", *data); // DEBUG
 	no_os_mutex_lock(desc->bus->mutex);
 	ret = desc->platform_ops->i2c_ops_write(desc, data, bytes_number,
 						stop_bit);
 	no_os_mutex_unlock(desc->bus->mutex);
-
+	pr_notice("End no_os_i2c_write; ret = %d\n", ret); // DEBUG
 	return ret;
 }
 
@@ -193,17 +202,25 @@ int32_t no_os_i2c_read(struct no_os_i2c_desc *desc,
 		       uint8_t stop_bit)
 {
 	int32_t ret;
-
+	pr_notice("Start no_os_i2c_read\n"); // DEBUG
 	if (!desc || !desc->platform_ops)
 		return -EINVAL;
 
 	if (!desc->platform_ops->i2c_ops_read)
 		return -ENOSYS;
 
+	pr_notice("%s data = %d\n",__func__,*data); // DEBUG
 	no_os_mutex_lock(desc->bus->mutex);
 	ret = desc->platform_ops->i2c_ops_read(desc, data, bytes_number,
 					       stop_bit);
 	no_os_mutex_unlock(desc->bus->mutex);
-
+	pr_notice("End no_os_i2c_read; ret = %d; data = %d\n",ret,*data); // DEBUG
+	// DEBUG
+	for(int i=0; i<bytes_number;i++)
+	{
+		printf("0x%02X ", data[i]);
+	}
+	printf("\n");
+	
 	return ret;
 }

@@ -33,7 +33,7 @@
 
 #include "parameters.h"
 #include "common_data.h"
-
+#include "no_os_print_log.h"
 int example_main();
 
 /***************************************************************************//**
@@ -43,5 +43,6 @@ int example_main();
 *******************************************************************************/
 int main()
 {
+	pr_notice("Start linux main\n"); // DEBUG
 	return example_main();
 }

@@ -61,7 +61,7 @@ int example_main()
 	float temp_c_max, temp_c_min;
 	float temp_now;
 	int ret;
-
+	pr_notice("Start example_main\n"); // DEBUG
 #ifndef LINUX_PLATFORM
 	struct no_os_uart_desc *uart;
 
@@ -71,19 +71,26 @@ int example_main()
 
 	no_os_uart_stdio(uart);
 #endif
-
+	pr_notice("==== BEFORE INIT ====\n"); // DEBUG
 	ret = adt7420_init(&adt7420, adt7420_user_init);
+	pr_notice("ret of adt7420_init is %d \n",ret); // DEBUG
 	if (ret)
 		goto error;
+	pr_notice("==== AFTER INIT ====\n"); // DEBUG
+	pr_notice("==== BEFORE RESET ====\n"); // DEBUG
 	ret = adt7420_reset(adt7420);
 	if (ret)
 		goto error_adt7420;
-
+	pr_notice("==== AFTER RESET ====\n"); // DEBUG
 	/* Datasheet specified delay between conversions. */
 	no_os_mdelay(240);
+	
+	pr_notice("==== BEFORE WHILE====\n"); // DEBUG
 
 	while (1) {
+		pr_notice("adt7420_reg_read (ADT7420_REG_T_HIGH_MSB): %d\n", ADT7420_REG_T_HIGH_MSB); // DEBUG
 		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_HIGH_MSB, &temp_msb_l);
+		pr_notice("adt7420_reg_read ret is %d\n", ret); // DEBUG
 		if (ret)
 			goto error_adt7420;
 		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_HIGH_LSB, &temp_lsb_l);

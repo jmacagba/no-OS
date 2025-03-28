@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include "no_os_error.h"
 #include "no_os_alloc.h"
+#include "no_os_print_log.h" //DEBUG
 #include "adt7420.h"
 
 const struct adt7420_chip_info chip_info[] = {
@@ -72,6 +73,7 @@ const struct adt7420_chip_info chip_info[] = {
 int adt7420_reg_read(struct adt7420_dev *dev,
 		     uint16_t register_address, uint16_t *data)
 {
+	pr_notice("Start adt7420_reg_read\n"); //DEBUG
 	if (adt7420_is_spi(dev))
 		return adt7420_spi_reg_read(dev, register_address, data);
 	else
@@ -202,7 +204,7 @@ int32_t adt7420_init(struct adt7420_dev **device,
 	struct adt7420_dev *dev;
 	int32_t status;
 	uint16_t device_connected_check = 0;
-
+	pr_notice("Start adt7420_init\n"); // DEBUG
 	dev = (struct adt7420_dev *)no_os_malloc(sizeof(*dev));
 	if (!dev)
 		return -1;
@@ -212,7 +214,14 @@ int32_t adt7420_init(struct adt7420_dev **device,
 	if (adt7420_is_spi(dev))
 		status = no_os_spi_init(&dev->spi_desc, &init_param.interface_init.spi_init);
 	else
+	{
+		pr_notice("Call no_os_i2c_init\n"); // DEBUG
+		pr_notice("  init_param.interface_init.i2c_init.device_id = %d\n", init_param.interface_init.i2c_init.device_id); // DEBUG
+		pr_notice("  init_param.interface_init.i2c_init.max_speed_hz = %d\n", init_param.interface_init.i2c_init.max_speed_hz); // DEBUG
+		pr_notice("  init_param.interface_init.i2c_init.slave_address = %d\n", init_param.interface_init.i2c_init.slave_address); // DEBUG
 		status = no_os_i2c_init(&dev->i2c_desc, &init_param.interface_init.i2c_init);
+	}
+	pr_notice("no_os_i2c_init status is %d\n", status); // DEBUG
 
 	if (status != -1) {
 		/* Device Settings */
@@ -229,21 +238,21 @@ int32_t adt7420_init(struct adt7420_dev **device,
 			status = adt7420_reg_read(dev, ADT7320_REG_ID, &device_connected_check);
 		else
 			status = adt7420_reg_read(dev, ADT7420_REG_ID, &device_connected_check);
-
+		pr_notice("status = %d\n", status); // DEBUG
 		if (status)
 			return status;
 		device_connected_check >>= 4; // Manufacturer ID
-
+		pr_notice("device_connected_check = %d\n", device_connected_check); // DEBUG
 		if (device_connected_check != ADT7xxx_ID) // AD7xxx ID Check
 			status = -1;
 		else
 			status = 0;
 
 		*device = dev;
-
+		pr_notice("End Start adt7420_init; return values= %d\n",status); // DEBUG
 		return status;
 	}
-
+	pr_notice("End Start adt7420_init\n"); // DEBUG
 	return status;
 
 adt7420_init_error:
@@ -336,6 +345,7 @@ int adt7420_set_resolution(struct adt7420_dev *dev,
 *******************************************************************************/
 int32_t adt7420_reset(struct adt7420_dev *dev)
 {
+	pr_notice("Start adt7420_reset\n"); // DEBUG
 	if (adt7420_is_spi(dev)) {
 		uint8_t data_buffer[] = { 0xFF, 0xFF, 0xFF, 0xFF };
 		if (no_os_spi_write_and_read(dev->spi_desc,
@@ -354,6 +364,7 @@ int32_t adt7420_reset(struct adt7420_dev *dev)
 	}
 	no_os_mdelay(ADT7420_RESET_DELAY); /* device restart */
 	dev->resolution_setting = 0;
+	pr_notice("End adt7420_reset\n"); // DEBUG
 	return 0;
 }
 
@@ -442,9 +453,10 @@ int adt7420_spi_reg_read(struct adt7420_dev *dev,
 int adt7420_i2c_reg_read(struct adt7420_dev *dev, uint16_t register_address,
 			 uint16_t *data)
 {
+	pr_notice("Start adt7420_i2c_reg_read 0x%X\n",register_address); // DEBUG
 	uint8_t data_buffer[3] = { 0, 0 };
 	uint8_t num_bytes;
-
+	pr_notice("ret of no_os_field_get %d\n", no_os_field_get(ADT7320_L16, register_address)); // DEBUG
 	if (no_os_field_get(ADT7320_L16, register_address))
 		num_bytes = 2;
 	else
@@ -460,7 +472,9 @@ int adt7420_i2c_reg_read(struct adt7420_dev *dev, uint16_t register_address,
 		*data = data_buffer[0];
 	else
 		*data = no_os_get_unaligned_be16(data_buffer);
-
+	
+	pr_notice("Read data: 0x%02X 0x%02X\n", data_buffer[0], data_buffer[1]); // DEBUG
+	pr_notice("End adt7420_i2c_reg_read\n"); // DEBUG
 	return 0;
 }
 
