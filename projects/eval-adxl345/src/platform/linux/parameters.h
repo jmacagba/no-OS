@@ -40,7 +40,7 @@
 
 #define SPI_DEVICE_ID	0
 #define SPI_CS		0
-#define SPI_BAUDRATE	1000000
+#define SPI_BAUDRATE	500000
 #define SPI_OPS		&linux_spi_ops
 #define SPI_EXTRA	NULL
 

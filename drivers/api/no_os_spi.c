@@ -37,6 +37,7 @@
 #include "no_os_error.h"
 #include "no_os_mutex.h"
 #include "no_os_alloc.h"
+#include "no_os_print_log.h" // DEBUG
 
 /**
  * @brief spi_table contains the pointers towards the SPI buses
@@ -53,7 +54,7 @@ int32_t no_os_spi_init(struct no_os_spi_desc **desc,
 		       const struct no_os_spi_init_param *param)
 {
 	int32_t ret;
-
+	pr_info("%s Start \n", __func__); // DEBUG
 	if (!param || !param->platform_ops)
 		return -EINVAL;
 
@@ -77,6 +78,7 @@ int32_t no_os_spi_init(struct no_os_spi_desc **desc,
 	(*desc)->parent = param->parent;
 	(*desc)->platform_delays = param->platform_delays;
 
+	pr_info("%s End \n", __func__); // DEBUG
 	return 0;
 }
 
@@ -161,7 +163,9 @@ int32_t no_os_spi_write_and_read(struct no_os_spi_desc *desc,
 				 uint16_t bytes_number)
 {
 	int32_t ret;
-
+	pr_info("%s Start \n", __func__); // DEBUG
+	pr_info("%s data=0x%X \n", __func__, *data); // DEBUG
+	pr_info("%s bytes_number=%d \n", __func__, bytes_number); // DEBUG
 	if (!desc || !desc->platform_ops)
 		return -EINVAL;
 
@@ -171,7 +175,7 @@ int32_t no_os_spi_write_and_read(struct no_os_spi_desc *desc,
 	no_os_mutex_lock(desc->bus->mutex);
 	ret =  desc->platform_ops->write_and_read(desc, data, bytes_number);
 	no_os_mutex_unlock(desc->bus->mutex);
-
+	pr_info("%s End; ret=%d \n", __func__,ret); // DEBUG
 	return ret;
 }
 

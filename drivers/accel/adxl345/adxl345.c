@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include "adxl345.h"
 #include "no_os_alloc.h"
+#include "no_os_print_log.h" // DEBUG
 
 static const uint8_t adxl345_part_id[] = {
 	[ID_ADXL345] = ADXL345_ID,
@@ -53,14 +54,16 @@ uint8_t adxl345_get_register_value(struct adxl345_dev *dev,
 {
 	uint8_t data_buffer[2] = {0, 0};
 	uint8_t register_value = 0;
-
+	pr_info("%s Start \n", __func__); // DEBUG
 	if (dev->communication_type == ADXL345_SPI_COMM) {
 		data_buffer[0] = ADXL345_SPI_READ | register_address;
 		data_buffer[1] = 0;
+		pr_info("%s data_buffer[0]=0x%X data_buffer[1]=0x%X\n", __func__,data_buffer[0],data_buffer[1]); // DEBUG
 		no_os_spi_write_and_read(dev->spi_desc,
 					 data_buffer,
 					 2);
 		register_value = data_buffer[1];
+		pr_info("%s data_buffer[0]=0x%X data_buffer[1]=0x%X\n", __func__,data_buffer[0],data_buffer[1]); // DEBUG
 	} else {
 		no_os_i2c_write(dev->i2c_desc,
 				&register_address, // Transmission data.
@@ -71,7 +74,7 @@ uint8_t adxl345_get_register_value(struct adxl345_dev *dev,
 			       1,                  // Number of bytes to read.
 			       1);                 // Stop condition control.
 	}
-
+	pr_info("%s End; register_value = 0x%X \n", __func__,register_value); // DEBUG
 	return register_value;
 }
 
@@ -125,10 +128,13 @@ int32_t adxl345_init(struct adxl345_dev **device,
 {
 	struct adxl345_dev *dev;
 	int32_t status = 0;
-
+	pr_info("%s Start \n", __func__); // DEBUG
 	dev = (struct adxl345_dev *)no_os_malloc(sizeof(*dev));
 	if (!dev)
+	{
+		pr_info("%s End 1 \n", __func__); // DEBUG
 		return -1;
+	}
 
 	dev->communication_type = init_param.communication_type;
 
@@ -145,7 +151,7 @@ int32_t adxl345_init(struct adxl345_dev **device,
 	dev->full_resolution_set = 0;
 
 	*device = dev;
-
+	pr_info("%s End 2 \n", __func__); // DEBUG
 	return status;
 }
 
@@ -212,11 +218,12 @@ void adxl345_get_xyz(struct adxl345_dev *dev,
 {
 	uint8_t first_reg_address = ADXL345_DATAX0;
 	uint8_t read_buffer[7]    = {0, 0, 0, 0, 0, 0, 0};
-
+	pr_info("%s Start \n", __func__); // DEBUG
 	if (dev->communication_type == ADXL345_SPI_COMM) {
 		read_buffer[0] = ADXL345_SPI_READ |
 				 ADXL345_SPI_MB |
 				 first_reg_address;
+		pr_info("%s read_buffer[0]=0x%X \n", __func__,read_buffer[0]); // DEBUG
 		no_os_spi_write_and_read(dev->spi_desc,
 					 read_buffer,
 					 7);
@@ -242,6 +249,7 @@ void adxl345_get_xyz(struct adxl345_dev *dev,
 		/* z = ((ADXL345_DATAZ1) << 8) + ADXL345_DATAZ0 */
 		*z = ((int16_t)read_buffer[5] << 8) + read_buffer[4];
 	}
+	pr_info("%s End \n", __func__); // DEBUG
 }
 
 /***************************************************************************//**
