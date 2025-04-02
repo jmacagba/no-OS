@@ -51,45 +51,47 @@ int example_main()
 	if (ret)
 		goto error;
 
-	// Raw Data Output
+	// Uncomment the following to read raw data
+/**	// Raw Data Output
 	int16_t x = 0;
 	int16_t y = 0;
-	int16_t z = 0;
+	int16_t z = 0; **/
 	
+	// Uncomment the following to read data in g
+	// Data Output in g
 	float x_f = 0.0;
 	float y_f = 0.0;
 	float z_f = 0.0;
 	
 	int power_ctl_reg_val = adxl345_get_register_value(adxl345_desc,ADXL345_POWER_CTL);
-	pr_info(" POWER_CTL REG=0x%X\n", power_ctl_reg_val);
+	pr_info("Check POWER_CTL REG=0x%X\n", power_ctl_reg_val);
 	
-	pr_info("\n\n");
 	int fifo_ctl_reg_val = adxl345_get_register_value(adxl345_desc,ADXL345_FIFO_CTL);
-	pr_info(" FIFO_CTL REG=0x%X\n", fifo_ctl_reg_val);
+	pr_info("Check FIFO_CTL REG=0x%X\n", fifo_ctl_reg_val);
 
 	// Enable measurement mode
+	pr_info("Set to Measurement Mode\n");
 	adxl345_set_power_mode(adxl345_desc,0x1);
 	
 	power_ctl_reg_val = adxl345_get_register_value(adxl345_desc,ADXL345_POWER_CTL);
-	pr_info(" POWER_CTL REG=0x%X\n", power_ctl_reg_val);
+	pr_info("Check POWER_CTL REG=0x%X\n", power_ctl_reg_val);
 
 	while (1) {
-
-		pr_info("Single read (INT)\n");
+		// Uncomment the following to read raw data
+/**		pr_info("Single read (raw)\n");
 		adxl345_get_xyz(adxl345_desc, &x, &y, &z);
-
 		pr_info(" x=%d", (int)x);
 		pr_info(" y=%d", (int)y);
-		pr_info(" z=%d\n", (int)z);
-
-		no_os_mdelay(10);
+		pr_info(" z=%d\n", (int)z);	**/
 		
-		pr_info("Single read (FLOAT)\n");
+		// Uncomment the following to read data in g
+		pr_info("Single read (g)\n");
 		adxl345_get_g_xyz(adxl345_desc, &x_f, &y_f, &z_f);
 		pr_info(" x in g=%f", x_f);
 		pr_info(" y in g=%f", y_f);
 		pr_info(" z in g=%f\n", z_f);
 
+		no_os_mdelay(10);
 	}
 
 

@@ -43,8 +43,6 @@
 #include <unistd.h>
 #include <linux/spi/spidev.h>
 
-#include "no_os_print_log.h" // DEBUG
-
 #warning SPI cs_delay_first and cs_delay_last delays are not supported on the linux platform
 
 /**
@@ -65,7 +63,6 @@ struct linux_spi_desc {
 int32_t linux_spi_init(struct no_os_spi_desc **desc,
 		       const struct no_os_spi_init_param *param)
 {
-	pr_info("%s Start \n", __func__); // DEBUG
 	struct linux_spi_desc *linux_desc;
 	struct no_os_spi_desc *descriptor;
 	uint8_t bits = 8;
@@ -74,10 +71,8 @@ int32_t linux_spi_init(struct no_os_spi_desc **desc,
 
 	descriptor = no_os_malloc(sizeof(*descriptor));
 	if (!descriptor)
-	{
-		pr_info("%s End 1 \n", __func__); // DEBUG
 		return -1;
-	}
+
 	linux_desc = (struct linux_spi_desc*) no_os_malloc(sizeof(
 				struct linux_spi_desc));
 	if (!linux_desc)
@@ -93,7 +88,6 @@ int32_t linux_spi_init(struct no_os_spi_desc **desc,
 		printf("%s: Can't open %s\n\r", __func__, path);
 		goto free;
 	}
-	pr_info("%s path=%s\n", __func__,path); // DEBUG
 
 	ret = ioctl(linux_desc->spidev_fd, SPI_IOC_WR_MODE,
 		    &param->mode);
@@ -101,7 +95,7 @@ int32_t linux_spi_init(struct no_os_spi_desc **desc,
 		printf("%s: Can't set SPI mode\n\r", __func__);
 		goto free;
 	}
-	pr_info("%s mode=%d\n", __func__,param->mode); // DEBUG
+
 	ret = ioctl(linux_desc->spidev_fd, SPI_IOC_WR_BITS_PER_WORD,
 		    &bits);
 	if (ret == -1) {
@@ -115,16 +109,15 @@ int32_t linux_spi_init(struct no_os_spi_desc **desc,
 		printf("%s: Can't set SPI max speed hz\n\r", __func__);
 		goto free;
 	}
-	pr_info("%s mode=%d\n", __func__,param->max_speed_hz); // DEBUG
 
 	*desc = descriptor;
-	pr_info("%s End 2 \n", __func__); // DEBUG
+
 	return 0;
 free:
 	no_os_free(linux_desc);
 free_desc:
 	no_os_free(descriptor);
-	pr_info("%s End 3 \n", __func__); // DEBUG
+
 	return -1;
 }
 
@@ -139,8 +132,6 @@ int32_t linux_spi_write_and_read(struct no_os_spi_desc *desc,
 				 uint8_t *data,
 				 uint16_t bytes_number)
 {
-	pr_info("%s Start \n", __func__); // DEBUG
-	pr_info("%s data=0x%X \n", __func__,*data); // DEBUG
 	struct spi_ioc_transfer tr = {
 		.tx_buf = (unsigned long)data,
 		.rx_buf = (unsigned long)data,
@@ -154,11 +145,9 @@ int32_t linux_spi_write_and_read(struct no_os_spi_desc *desc,
 	ret = ioctl(linux_desc->spidev_fd, SPI_IOC_MESSAGE(1), &tr);
 	if (ret == 1) {
 		printf("%s: Can't send spi message\n\r", __func__);
-		pr_info("%s End 1 \n", __func__); // DEBUG
 		return -1;
 	}
-	pr_info("%s data=0x%X \n", __func__,*data); // DEBUG
-	pr_info("%s End 2; \n", __func__); // DEBUG
+
 	return 0;
 }
 
