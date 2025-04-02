@@ -31,9 +31,11 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "platform_includes.h"
+#include "parameters.h"
 #include "common_data.h"
 #include "no_os_error.h"
+
+extern int example_main();
 
 /**
  * @brief Main function execution for pico platform.
@@ -43,7 +45,7 @@
 int main()
 {
 	int ret = -EINVAL;
-	adis1646x_ip.spi_init = &adis1646x_spi_ip;
+	adxl345_ip.spi_init = adxl345_spi_ip;
 
 	ret = example_main();
 

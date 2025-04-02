@@ -36,6 +36,7 @@
 
 #include "common_data.h"
 #include "linux_spi.h"
+#include <stddef.h>
 
 #define SPI_DEVICE_ID	0
 #define SPI_CS		0
