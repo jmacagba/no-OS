@@ -41,11 +41,11 @@
 
 #define SPI_DEVICE_ID	0
 #define SPI_CS		0
-#define SPI_BAUDRATE	1000000
+#define SPI_BAUDRATE	500000 // 1000000
 #define SPI_OPS		&linux_spi_ops
 #define SPI_EXTRA	NULL
 
-#define GPIO_RESET_PIN_NUM   0 /* Not used for linux platform */
+#define GPIO_RESET_PIN_NUM   -1 /* Not used for linux platform */
 #define GPIO_RESET_PORT_NUM  NULL /* Not used for linux platform */
 #define GPIO_OPS            &linux_gpio_ops
 #define GPIO_EXTRA          NULL /* Not used for linux platform */

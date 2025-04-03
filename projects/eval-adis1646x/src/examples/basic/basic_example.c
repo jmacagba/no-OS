@@ -72,10 +72,37 @@ int basic_example_main()
 	struct adis_scale_fractional accl_scale;
 	struct adis_scale_fractional anglvel_scale;
 	struct adis_scale_fractional temp_scale;
+	uint32_t rang_mdl = 0;
+	uint32_t clk_freq = 0;
+	uint32_t dec_rate = 0;
+	uint32_t prod_id = 0;
 
 	ret = adis_init(&adis1646x_desc, &adis1646x_ip);
 	if (ret)
 		goto exit;
+
+	ret = adis_read_prod_id(adis1646x_desc, &prod_id);
+	pr_info("[DEBUG] Product ID = %X \n", prod_id);
+	if (ret)
+		goto exit;
+	if(prod_id != 16465)
+		goto exit;
+
+	ret = adis_read_gyro_meas_range(adis1646x_desc, &rang_mdl);
+	pr_info("[DEBUG] Range Identifier = %X \n", rang_mdl);
+	if (ret)
+		goto exit;
+
+	ret = adis_get_sync_clk_freq(adis1646x_desc, &clk_freq);
+	pr_info("[DEBUG] Synchronization Clock Frequency = %d Hz\n", clk_freq);
+	if (ret)
+		goto exit;
+
+	ret = adis_read_dec_rate(adis1646x_desc, &dec_rate);
+	pr_info("[DEBUG] Decimation Rate = %d \n", dec_rate);
+	if (ret)
+		goto exit;
+
 
 	ret = adis_get_accl_scale(adis1646x_desc, &accl_scale);
 	if (ret)
@@ -98,6 +125,10 @@ int basic_example_main()
 		(float)accl_scale.dividend / accl_scale.divisor,
 		(float)temp_scale.dividend / temp_scale.divisor,
 	};
+
+	pr_info("[DEBUG] anglvel_scale.dividend = %d / anglvel_scale.divisor = %d \n", anglvel_scale.dividend, anglvel_scale.divisor);
+	pr_info("[DEBUG] accl_scale.dividend = %d / accl_scale.divisor = %d \n", accl_scale.dividend, accl_scale.divisor);
+	pr_info("[DEBUG] temp_scale.dividend = %d / temp_scale.divisor = %d \n", temp_scale.dividend, temp_scale.divisor);
 
 	while (1) {
 		pr_info("while loop \n");
@@ -125,8 +156,11 @@ int basic_example_main()
 			goto exit;
 
 		for (uint8_t i = 0; i < 7; i++)
-			pr_info("%s %.5f %s \n", output_data[i], val[i] * output_scale[i],
+		{
+			pr_info("[DEBUG] Raw Data 0x%X, Scale %f | ", val[i], output_scale[i]);
+			pr_info("%s %.5f %s \n", output_data[i], (float)(val[i] * output_scale[i]),
 				output_unit[i]);
+		}
 	}
 
 exit:
