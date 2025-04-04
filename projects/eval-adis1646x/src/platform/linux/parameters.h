@@ -45,7 +45,7 @@
 #define SPI_OPS		&linux_spi_ops
 #define SPI_EXTRA	NULL
 
-#define GPIO_RESET_PIN_NUM   -1 /* Not used for linux platform */
+#define GPIO_RESET_PIN_NUM   15 /* Not used for linux platform */
 #define GPIO_RESET_PORT_NUM  NULL /* Not used for linux platform */
 #define GPIO_OPS            &linux_gpio_ops
 #define GPIO_EXTRA          NULL /* Not used for linux platform */
