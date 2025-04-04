@@ -98,6 +98,10 @@ int basic_example_main()
 	if (ret)
 		goto exit;
 
+	ret = adis_write_dec_rate(adis1646x_desc, 0X13); // Set to ~100HZ
+	if (ret)
+		goto exit;
+
 	ret = adis_read_dec_rate(adis1646x_desc, &dec_rate);
 	pr_info("[DEBUG] Decimation Rate = %d \n", dec_rate);
 	if (ret)
