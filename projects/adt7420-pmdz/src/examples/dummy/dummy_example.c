@@ -31,123 +31,160 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "common_data.h"
+// #include "common_data.h"
+// #include "adt7420.h"
+// #include "no_os_delay.h"
+// #include "no_os_print_log.h"
+// #include "linux/linux_i2c.h"
+
 #include "adt7420.h"
-#include "no_os_delay.h"
-#include "no_os_print_log.h"
+#include "no_os_i2c.h"
+#include "linux/linux_i2c.h"
 
-#define ADT7320_L8		NO_OS_BIT(8)
-#define ADT7320_L16		NO_OS_BIT(16)
+int main() {
+    struct adt7420_dev *adt7420;
+    struct adt7420_init_param init_param = {
+        .interface_init.i2c_init = {
+            .device_id = 1, // I2C bus number
+            .slave_address = 0x48, // ADT7420 I2C address
+            .max_speed_hz = 100000 // I2C speed
+        },
+        .resolution_setting = 1, // 16-bit resolution
+        .active_device = ID_ADT7420
+    };
 
-#define ADT7320_LEN_MSK		NO_OS_GENMASK(16, 8)
-#define ADT7320_ADDR_MSK	NO_OS_GENMASK(15,0)
+    // Initialize the ADT7420 device
+    if (adt7420_init(&adt7420, init_param) != 0) {
+        printf("Failed to initialize ADT7420.\n");
+        return -1;
+    }
 
-#define REG_THAT_IS_16		(ADT7320_L16 | ADT7320_REG_T_HIGH)
-#define REG_OTH_IS_16		(ADT7320_L16 | ADT7320_REG_T_LOW)
-#define REG_THAT_IS_8		ADT7320_REG_ID
-#define REG_OTH_IS_8		ADT7320_REG_ID
+    printf("ADT7420 initialized successfully.\n");
 
-/***************************************************************************//**
- * @brief Dummy example main execution.
- *
- * @return ret - Result of the example execution. If working correctly, will
- *               execute continuously the while(1) loop and will not return.
-*******************************************************************************/
-int example_main()
-{
-	struct adt7420_dev *adt7420;
-	uint16_t temp_max = 0, temp_min = 0;
-	uint16_t temp_msb_l = 0, temp_lsb_l = 0;
-	float temp_c_max, temp_c_min;
-	float temp_now;
-	int ret;
-	pr_notice("Start example_main\n"); // DEBUG
-#ifndef LINUX_PLATFORM
-	struct no_os_uart_desc *uart;
+    // Read temperature
+    float temperature = adt7420_get_temperature(adt7420);
+    printf("Temperature: %.2f°C\n", temperature);
 
-	ret = no_os_uart_init(&uart, &uip);
-	if (ret)
-		goto error;
+    // Reset the device
+    adt7420_reset(adt7420);
 
-	no_os_uart_stdio(uart);
-#endif
-	pr_notice("==== BEFORE INIT ====\n"); // DEBUG
-	ret = adt7420_init(&adt7420, adt7420_user_init);
-	pr_notice("ret of adt7420_init is %d \n",ret); // DEBUG
-	if (ret)
-		goto error;
-	pr_notice("==== AFTER INIT ====\n"); // DEBUG
-	pr_notice("==== BEFORE RESET ====\n"); // DEBUG
-	ret = adt7420_reset(adt7420);
-	if (ret)
-		goto error_adt7420;
-	pr_notice("==== AFTER RESET ====\n"); // DEBUG
-	/* Datasheet specified delay between conversions. */
-	no_os_mdelay(240);
-	
-	pr_notice("==== BEFORE WHILE====\n"); // DEBUG
+    // Free resources
+    adt7420_remove(adt7420);
 
-	while (1) {
-		pr_notice("adt7420_reg_read (ADT7420_REG_T_HIGH_MSB): %d\n", ADT7420_REG_T_HIGH_MSB); // DEBUG
-		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_HIGH_MSB, &temp_msb_l);
-		pr_notice("adt7420_reg_read ret is %d\n", ret); // DEBUG
-		if (ret)
-			goto error_adt7420;
-		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_HIGH_LSB, &temp_lsb_l);
-		if (ret)
-			goto error_adt7420;
-		temp_max = (((uint8_t)temp_msb_l) << 8) | ((uint8_t)temp_lsb_l);
-
-		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_LOW_MSB, &temp_msb_l);
-		if (ret)
-			goto error_adt7420;
-		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_LOW_LSB, &temp_lsb_l);
-		if (ret)
-			goto error_adt7420;
-		temp_min = (temp_msb_l << 8) | temp_lsb_l;
-
-		if (adt7420->resolution_setting) {
-			if (temp_max & ADT7420_16BIT_SIGN) {
-				/*! Negative temperature */
-				temp_c_max = (float)((int32_t)temp_max - ADT7420_16BIT_NEG) / ADT7420_16BIT_DIV;
-				temp_c_min = (float)((int32_t)temp_min - ADT7420_16BIT_NEG) / ADT7420_16BIT_DIV;
-			} else {
-				/*! Positive temperature */
-				temp_c_max = (float)temp_max / ADT7420_16BIT_DIV;
-				temp_c_min = (float)temp_min / ADT7420_16BIT_DIV;
-			}
-		} else {
-			temp_max >>= 3;
-			temp_min >>= 3;
-			if (temp_max & ADT7420_13BIT_SIGN) {
-				/*! Negative temperature */
-				temp_c_max = (float)((int32_t)temp_max - ADT7420_13BIT_NEG) / ADT7420_13BIT_DIV;
-				temp_c_min = (float)((int32_t)temp_min - ADT7420_13BIT_NEG) / ADT7420_13BIT_DIV;
-			} else {
-				/*! Positive temperature */
-				temp_c_max = (float)temp_max / ADT7420_13BIT_DIV;
-				temp_c_min = (float)temp_min / ADT7420_13BIT_DIV;
-			}
-		}
-
-		temp_now = adt7420_get_temperature(adt7420);
-		uint32_t hyst = 5;
-		ret = adt7420_reg_write(adt7420, ADT7420_REG_HIST, hyst);
-		if (ret)
-			goto error_adt7420;
-		uint32_t readval = 0;
-		ret = adt7420_reg_read(adt7420, ADT7420_REG_HIST, &readval);
-		if (ret)
-			goto error_adt7420;
-		printf("The value read from the hist register is %d\n", readval);
-		pr_info("Temp read is %lf\r\n", temp_now);
-		pr_info("Current temp high setpoint is %d\r\n", (int) temp_c_max);
-		pr_info("Current temp low setpoint is %d\r\n", (int) temp_c_min);
-		no_os_mdelay(3000);
-	}
-error_adt7420:
-	adt7420_remove(adt7420);
-error:
-	pr_info("Error!\r\n");
-	return 0;
+    return 0;
 }
+// #define ADT7320_L8		NO_OS_BIT(8)
+// #define ADT7320_L16		NO_OS_BIT(16)
+
+// #define ADT7320_LEN_MSK		NO_OS_GENMASK(16, 8)
+// #define ADT7320_ADDR_MSK	NO_OS_GENMASK(15,0)
+
+// #define REG_THAT_IS_16		(ADT7320_L16 | ADT7320_REG_T_HIGH)
+// #define REG_OTH_IS_16		(ADT7320_L16 | ADT7320_REG_T_LOW)
+// #define REG_THAT_IS_8		ADT7320_REG_ID
+// #define REG_OTH_IS_8		ADT7320_REG_ID
+
+// /***************************************************************************//**
+//  * @brief Dummy example main execution.
+//  *
+//  * @return ret - Result of the example execution. If working correctly, will
+//  *               execute continuously the while(1) loop and will not return.
+// *******************************************************************************/
+// int example_main()
+// {
+// 	struct adt7420_dev *adt7420;
+// 	uint16_t temp_max = 0, temp_min = 0;
+// 	uint16_t temp_msb_l = 0, temp_lsb_l = 0;
+// 	float temp_c_max, temp_c_min;
+// 	float temp_now;
+// 	int ret;
+// 	pr_notice("Start example_main\n"); // DEBUG
+// #ifndef LINUX_PLATFORM
+// 	struct no_os_uart_desc *uart;
+
+// 	ret = no_os_uart_init(&uart, &uip);
+// 	if (ret)
+// 		goto error;
+
+// 	no_os_uart_stdio(uart);
+// #endif
+// 	pr_notice("==== BEFORE INIT ====\n"); // DEBUG
+// 	ret = adt7420_init(&adt7420, adt7420_user_init);
+// 	pr_notice("ret of adt7420_init is %d \n",ret); // DEBUG
+// 	if (ret)
+// 		goto error;
+// 	pr_notice("==== AFTER INIT ====\n"); // DEBUG
+// 	pr_notice("==== BEFORE RESET ====\n"); // DEBUG
+// 	ret = adt7420_reset(adt7420);
+// 	if (ret)
+// 		goto error_adt7420;
+// 	pr_notice("==== AFTER RESET ====\n"); // DEBUG
+// 	/* Datasheet specified delay between conversions. */
+// 	no_os_mdelay(240);
+	
+// 	pr_notice("==== BEFORE WHILE====\n"); // DEBUG
+
+// 	while (1) {
+// 		pr_notice("adt7420_reg_read (ADT7420_REG_T_HIGH_MSB): %d\n", ADT7420_REG_T_HIGH_MSB); // DEBUG
+// 		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_HIGH_MSB, &temp_msb_l);
+// 		pr_notice("adt7420_reg_read ret is %d\n", ret); // DEBUG
+// 		if (ret)
+// 			goto error_adt7420;
+// 		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_HIGH_LSB, &temp_lsb_l);
+// 		if (ret)
+// 			goto error_adt7420;
+// 		temp_max = (((uint8_t)temp_msb_l) << 8) | ((uint8_t)temp_lsb_l);
+
+// 		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_LOW_MSB, &temp_msb_l);
+// 		if (ret)
+// 			goto error_adt7420;
+// 		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_LOW_LSB, &temp_lsb_l);
+// 		if (ret)
+// 			goto error_adt7420;
+// 		temp_min = (temp_msb_l << 8) | temp_lsb_l;
+
+// 		if (adt7420->resolution_setting) {
+// 			if (temp_max & ADT7420_16BIT_SIGN) {
+// 				/*! Negative temperature */
+// 				temp_c_max = (float)((int32_t)temp_max - ADT7420_16BIT_NEG) / ADT7420_16BIT_DIV;
+// 				temp_c_min = (float)((int32_t)temp_min - ADT7420_16BIT_NEG) / ADT7420_16BIT_DIV;
+// 			} else {
+// 				/*! Positive temperature */
+// 				temp_c_max = (float)temp_max / ADT7420_16BIT_DIV;
+// 				temp_c_min = (float)temp_min / ADT7420_16BIT_DIV;
+// 			}
+// 		} else {
+// 			temp_max >>= 3;
+// 			temp_min >>= 3;
+// 			if (temp_max & ADT7420_13BIT_SIGN) {
+// 				/*! Negative temperature */
+// 				temp_c_max = (float)((int32_t)temp_max - ADT7420_13BIT_NEG) / ADT7420_13BIT_DIV;
+// 				temp_c_min = (float)((int32_t)temp_min - ADT7420_13BIT_NEG) / ADT7420_13BIT_DIV;
+// 			} else {
+// 				/*! Positive temperature */
+// 				temp_c_max = (float)temp_max / ADT7420_13BIT_DIV;
+// 				temp_c_min = (float)temp_min / ADT7420_13BIT_DIV;
+// 			}
+// 		}
+
+// 		temp_now = adt7420_get_temperature(adt7420);
+// 		uint32_t hyst = 5;
+// 		ret = adt7420_reg_write(adt7420, ADT7420_REG_HIST, hyst);
+// 		if (ret)
+// 			goto error_adt7420;
+// 		uint32_t readval = 0;
+// 		ret = adt7420_reg_read(adt7420, ADT7420_REG_HIST, &readval);
+// 		if (ret)
+// 			goto error_adt7420;
+// 		printf("The value read from the hist register is %d\n", readval);
+// 		pr_info("Temp read is %lf\r\n", temp_now);
+// 		pr_info("Current temp high setpoint is %d\r\n", (int) temp_c_max);
+// 		pr_info("Current temp low setpoint is %d\r\n", (int) temp_c_min);
+// 		no_os_mdelay(3000);
+// 	}
+// error_adt7420:
+// 	adt7420_remove(adt7420);
+// error:
+// 	pr_info("Error!\r\n");
+// 	return 0;
+// }

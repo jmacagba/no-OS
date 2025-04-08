@@ -453,6 +453,16 @@ int adt7420_spi_reg_read(struct adt7420_dev *dev,
 int adt7420_i2c_reg_read(struct adt7420_dev *dev, uint16_t register_address,
 			 uint16_t *data)
 {
+	pr_notice("Start1 adt7420_reg_read\n");
+    pr_notice("Register1 address: 0x%X\n", register_address);
+
+    if (adt7420_is_spi(dev)) {
+        return adt7420_spi_reg_read(dev, register_address, data);
+    } else {
+        int ret = adt7420_i2c_reg_read(dev, register_address, data);
+        pr_notice("Read data1: 0x%X\n", *data);
+        return ret;
+    }
 	pr_notice("Start adt7420_i2c_reg_read 0x%X\n",register_address); // DEBUG
 	uint8_t data_buffer[3] = { 0, 0 };
 	uint8_t num_bytes;
