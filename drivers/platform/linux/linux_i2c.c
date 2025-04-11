@@ -45,17 +45,14 @@
 #include <linux/i2c-dev.h>
 
 /**
- * @brief Variable to provide the custom read command the register to read
- */
-uint8_t *gp_linux_i2c_rdwr_reg_to_read = NULL;
-
-/**
  * @struct linux_i2c_desc
  * @brief Linux platform specific I2C descriptor
  */
 struct linux_i2c_desc {
 	/** /dev/i2c-"device_id" file descriptor */
 	int fd;
+	/** struct for write - repeated start - read operations */
+	struct i2c_msg tx_msg;
 };
 
 /**
@@ -171,64 +168,10 @@ int32_t linux_i2c_write(struct no_os_i2c_desc *desc,
 		printf("%s: ret %d\n\r", __func__, ret); // DEBUG
 		printf("%s: Data write 0x%X\n\r", __func__, *data); // DEBUG
 	} else {
-		gp_linux_i2c_rdwr_reg_to_read = data;
-	}
-
-	return 0;
-}
-
-/**
- * @brief Read after write without stop bits in between. Based on Jam's sample code.
- * @param desc - The I2C descriptor.
- * @param data - Buffer that will store the received data.
- * @param bytes_number - Number of bytes to read.
- * @param stop_bit - Stop condition control.
- *                   Example: 0 - A stop condition will not be generated;
- *                            1 - A stop condition will be generated.
- * @param linux_rdwr_reg_to_read - Extern global variable. The register to read.
- * @return 0 in case of success, -1 otherwise.
- */
-int32_t linux_i2c_write_read_no_stop(struct no_os_i2c_desc *desc,
-		       uint8_t *data,
-		       uint8_t bytes_number,
-		       uint8_t stop_bit)
-{
-	printf("%s\n\r", __func__);
-	struct linux_i2c_desc *linux_desc;
-	int32_t ret;
-
-	linux_desc = desc->extra;
-	
-	struct i2c_rdwr_ioctl_data packets;
-	struct i2c_msg messages[2];
-	
-	// Write to device what register to read.
-	messages[0].addr = desc->slave_address;
-	messages[0].flags = 0;	// Write
-	messages[0].len = 1;	// 1 byte
-	messages[0].buf = gp_linux_i2c_rdwr_reg_to_read;  // The register to read
-	
-	// Read from the target register.
-	messages[1].addr=desc->slave_address;
-	messages[1].flags=I2C_M_RD;		// Read
-	messages[1].len=bytes_number;	// How many bytes to read
-	messages[1].buf=data;			// Where to store the read data
-	
-	packets.msgs = messages;
-	packets.nmsgs = 2;
-	
-	printf("%s: read bytes_number %d\n\r", __func__, bytes_number); // DEBUG
-	printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
-	ret = ioctl(linux_desc->fd, I2C_RDWR, &packets);
-	perror("Return"); // DEBUG
-	if (ret < 0) {
-		printf("%s: Can't read from file\n\r", __func__);
-		return -1;
-	}
-	printf("%s: ret %d\n\r", __func__, ret); // DEBUG
-	printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
-	if (stop_bit) {
-		// Unused variable - fix compiler warning
+		linux_desc->tx_msg.addr = desc->slave_address;
+		linux_desc->tx_msg.flags = 0;	// Write
+		linux_desc->tx_msg.len = bytes_number;
+		linux_desc->tx_msg.buf = data;
 	}
 
 	return 0;
@@ -254,7 +197,7 @@ int32_t linux_i2c_read(struct no_os_i2c_desc *desc,
 
 	linux_desc = desc->extra;
 
-	if (NULL == gp_linux_i2c_rdwr_reg_to_read) {
+	if (0 == linux_desc->tx_msg.addr) {
 		printf("%s: ioctl I2C_SLAVE %d\n\r", __func__, I2C_SLAVE); // DEBUG
 		printf("%s: ioctl desc->slave_address %d\n\r", __func__, desc->slave_address); // DEBUG
 		ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
@@ -278,10 +221,7 @@ int32_t linux_i2c_read(struct no_os_i2c_desc *desc,
 		struct i2c_msg messages[2];
 		
 		// Write to device what register to read.
-		messages[0].addr = desc->slave_address;
-		messages[0].flags = 0;	// Write
-		messages[0].len = 1;	// 1 byte
-		messages[0].buf = gp_linux_i2c_rdwr_reg_to_read;
+		messages[0] = linux_desc->tx_msg;
 		
 		// Read from the target register.
 		messages[1].addr = desc->slave_address;
@@ -302,8 +242,11 @@ int32_t linux_i2c_read(struct no_os_i2c_desc *desc,
 		}
 		printf("%s: ret %d\n\r", __func__, ret); // DEBUG
 		printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
-
-		gp_linux_i2c_rdwr_reg_to_read = NULL;
+		
+		// Reset tx_msg
+		linux_desc->tx_msg.addr = 0;
+		linux_desc->tx_msg.len = 0;
+		linux_desc->tx_msg.buf = NULL;
 	}
 	
 	if (stop_bit) {
