@@ -289,6 +289,6 @@ const struct no_os_i2c_platform_ops linux_i2c_ops = {
 const struct no_os_i2c_platform_ops linux_i2c_ops_custom = {
 	.i2c_ops_init = &linux_i2c_init,
 	.i2c_ops_write = &linux_i2c_write,
-	.i2c_ops_read = &linux_i2c_read_write_no_stop,	// Use custom write method
+	.i2c_ops_read = &linux_i2c_read_write_no_stop,	// Use custom read method
 	.i2c_ops_remove = &linux_i2c_remove
 };
