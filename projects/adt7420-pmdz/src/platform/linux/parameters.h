@@ -38,7 +38,7 @@
 
 #define I2C_DEVICE_ID   1
 #define I2C_EXTRA	&adt7420_i2c_extra
-#define I2C_OPS		&linux_i2c_ops_custom
+#define I2C_OPS		&linux_i2c_ops_custom	// Use the one with the custom read function.
 
 extern struct linux_i2c_init_param adt7420_i2c_extra;
 

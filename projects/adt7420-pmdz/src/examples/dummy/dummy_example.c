@@ -87,6 +87,7 @@ int example_main()
 	
 	pr_notice("==== BEFORE WHILE====\n"); // DEBUG
 
+	int ctr = 0;
 	while (1) {
 		pr_notice("adt7420_reg_read (ADT7420_REG_T_HIGH_MSB): %d\n", ADT7420_REG_T_HIGH_MSB); // DEBUG
 		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_HIGH_MSB, &temp_msb_l);
@@ -98,7 +99,6 @@ int example_main()
 			goto error_adt7420;
 		temp_max = (((uint8_t)temp_msb_l) << 8) | ((uint8_t)temp_lsb_l);
 
-		pr_notice("BUUUUUUH: ADT7420_REG_T_LOW_MSB 0x%X\n", ADT7420_REG_T_LOW_MSB);
 		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_LOW_MSB, &temp_msb_l);
 		if (ret)
 			goto error_adt7420;
@@ -144,6 +144,8 @@ int example_main()
 		pr_info("Temp read is %lf\r\n", temp_now);
 		pr_info("Current temp high setpoint is %d\r\n", (int) temp_c_max);
 		pr_info("Current temp low setpoint is %d\r\n", (int) temp_c_min);
+		pr_info("---------- %d ----------\n\n", ctr);
+		ctr++;
 		no_os_mdelay(3000);
 	}
 error_adt7420:

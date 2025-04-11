@@ -200,14 +200,6 @@ int adt7420_i2c_reg_read(struct adt7420_dev *dev,
 int adt7420_spi_reg_read(struct adt7420_dev *dev,
 			 uint16_t register_address, uint16_t *data);
 
-/**
-void adt7420_i2c_reg_read_prep(struct no_os_i2c_desc *desc, uint16_t *register_address);
-int adt7420_i2c_reg_read_custom(struct no_os_i2c_desc *desc,
-	uint8_t *data,
-	uint8_t bytes_number,
-	uint8_t stop_bit);
-*/
-
 /*! Check if the interface of the selected device is SPI */
 bool adt7420_is_spi(struct adt7420_dev *dev);
 
