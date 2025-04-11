@@ -98,6 +98,7 @@ int example_main()
 			goto error_adt7420;
 		temp_max = (((uint8_t)temp_msb_l) << 8) | ((uint8_t)temp_lsb_l);
 
+		pr_notice("BUUUUUUH: ADT7420_REG_T_LOW_MSB 0x%X\n", ADT7420_REG_T_LOW_MSB);
 		ret = adt7420_reg_read(adt7420, ADT7420_REG_T_LOW_MSB, &temp_msb_l);
 		if (ret)
 			goto error_adt7420;

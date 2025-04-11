@@ -36,6 +36,11 @@
 #include <stdint.h>
 
 /**
+ * @brief Variable to provide the custom read command the register to read
+ */
+extern uint8_t linux_rdwr_reg_to_read;
+
+/**
  * @struct linux_i2c_init_param
  * @brief Structure holding the initialization parameters for Linux platform
  * specific I2C parameters.
@@ -49,5 +54,10 @@ struct linux_i2c_init_param {
  * @brief Linux specific I2C platform ops structure
  */
 extern const struct no_os_i2c_platform_ops linux_i2c_ops;
+
+/**
+ * @brief Custom Linux specific I2C platform ops structure
+ */
+extern const struct no_os_i2c_platform_ops linux_i2c_ops_custom;
 
 #endif // LINUX_I2C_H_

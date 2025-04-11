@@ -38,6 +38,9 @@
 #include "no_os_print_log.h" //DEBUG
 #include "adt7420.h"
 
+#include "linux_i2c.h"	// linux_rdwr_reg_to_read;
+uint8_t linux_rdwr_reg_to_read;
+
 const struct adt7420_chip_info chip_info[] = {
 	[ID_ADT7410] = {
 		.resolution = 16,
@@ -462,9 +465,11 @@ int adt7420_i2c_reg_read(struct adt7420_dev *dev, uint16_t register_address,
 	else
 		num_bytes = 1;
 
-	if (no_os_i2c_write(dev->i2c_desc, &register_address, 1,
-			    0)) //add a repeat start
-		return -1;
+	//~ if (no_os_i2c_write(dev->i2c_desc, &register_address, 1,
+			    //~ 0)) //add a repeat start
+	//~ return -1;
+	linux_rdwr_reg_to_read = register_address;
+	
 	if (no_os_i2c_read(dev->i2c_desc, data_buffer, num_bytes, 1))
 		return -1;
 
@@ -475,8 +480,52 @@ int adt7420_i2c_reg_read(struct adt7420_dev *dev, uint16_t register_address,
 	
 	pr_notice("Read data: 0x%02X 0x%02X\n", data_buffer[0], data_buffer[1]); // DEBUG
 	pr_notice("End adt7420_i2c_reg_read\n"); // DEBUG
+	
 	return 0;
 }
+
+/**
+void adt7420_i2c_reg_read_prep(struct no_os_i2c_desc *desc, uint16_t *register_address)
+{
+	g_wr_messages[0].addr=desc->slave_address;  // Slave address
+	g_wr_messages[0].flags=0;  // Write
+	g_wr_messages[0].len=1;  // 1 Byte
+	g_wr_messages[0].buf=register_address;  // Tell slave what register to write to
+}
+
+int adt7420_i2c_reg_read_custom(struct no_os_i2c_desc *desc,
+		       uint8_t *data,
+		       uint8_t bytes_number,
+		       uint8_t stop_bit)
+{
+	struct i2c_rdwr_ioctl_data packets;
+	int32_t ret;
+
+	struct linux_i2c_desc *linux_desc = dev->extra;
+	
+	g_wr_messages[1].addr=desc->slave_address;  // Slave address
+	g_wr_messages[1].flags=I2C_M_RD;  // Read
+	g_wr_messages[1].len=bytes_number;  // 1 Byte
+	g_wr_messages[1].buf=data;  // Where to store the data
+
+	packets.msgs = messages;
+	packets.nmsgs = 2;
+
+	ret = ioctl(linux_desc->fd, I2C_RDWR, &packets);
+	if (ret < 0) {
+		printf("%s: Can't read from file\n\r", __func__);
+		return -1;
+	}
+
+	if (stop_bit) {
+		// Unused variable - fix compiler warning
+	}
+
+	g_wr_messages = struct i2c_messages[2]; // Reset the messages for next read
+
+	return 0;
+}
+*/
 
 /***************************************************************************//**
  * @brief Check if the interface of the selected device is SPI
