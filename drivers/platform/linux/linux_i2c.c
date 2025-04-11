@@ -45,6 +45,11 @@
 #include <linux/i2c-dev.h>
 
 /**
+ * @brief Variable to provide the custom read command the register to read
+ */
+uint8_t *gp_linux_i2c_rdwr_reg_to_read = NULL;
+
+/**
  * @struct linux_i2c_desc
  * @brief Linux platform specific I2C descriptor
  */
@@ -145,72 +150,28 @@ int32_t linux_i2c_write(struct no_os_i2c_desc *desc,
 	int32_t ret;
 
 	linux_desc = desc->extra;
-	printf("%s: ioctl I2C_SLAVE %d\n\r", __func__, I2C_SLAVE); // DEBUG
-	printf("%s: ioctl desc->slave_address %d\n\r", __func__, desc->slave_address); // DEBUG
-	ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
-	if (ret < 0) {
-		printf("%s: Can't select device\n\r", __func__);
-		return -1;
-	}
+	
+	if (stop_bit != 0) {
+		printf("%s: ioctl I2C_SLAVE %d\n\r", __func__, I2C_SLAVE); // DEBUG
+		printf("%s: ioctl desc->slave_address %d\n\r", __func__, desc->slave_address); // DEBUG
+		ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
+		if (ret < 0) {
+			printf("%s: Can't select device\n\r", __func__);
+			return -1;
+		}
 
-	printf("%s: write bytes_number %d\n\r", __func__, bytes_number);
-	printf("%s: write data 0x%X\n\r", __func__, *data); // DEBUG
-	ret = write(linux_desc->fd, data, bytes_number);
-	if (ret < 0) {
-		printf("%s: Can't write to file\n\r", __func__);
-		return -1;
-	}
+		printf("%s: write bytes_number %d\n\r", __func__, bytes_number);
+		printf("%s: write data 0x%X\n\r", __func__, *data); // DEBUG
+		ret = write(linux_desc->fd, data, bytes_number);
+		if (ret < 0) {
+			printf("%s: Can't write to file\n\r", __func__);
+			return -1;
+		}
 
-	printf("%s: ret %d\n\r", __func__, ret); // DEBUG
-	printf("%s: Data write 0x%X\n\r", __func__, *data); // DEBUG
-
-	if (stop_bit) {
-		// Unused variable - fix compiler warning
-	}
-
-	return 0;
-}
-
-/**
- * @brief Read data from a slave device.
- * @param desc - The I2C descriptor.
- * @param data - Buffer that will store the received data.
- * @param bytes_number - Number of bytes to read.
- * @param stop_bit - Stop condition control.
- *                   Example: 0 - A stop condition will not be generated;
- *                            1 - A stop condition will be generated.
- * @return 0 in case of success, -1 otherwise.
- */
-int32_t linux_i2c_read(struct no_os_i2c_desc *desc,
-		       uint8_t *data,
-		       uint8_t bytes_number,
-		       uint8_t stop_bit)
-{
-	struct linux_i2c_desc *linux_desc;
-	int32_t ret;
-
-	linux_desc = desc->extra;
-
-	printf("%s: ioctl I2C_SLAVE %d\n\r", __func__, I2C_SLAVE); // DEBUG
-	printf("%s: ioctl desc->slave_address %d\n\r", __func__, desc->slave_address); // DEBUG
-	ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
-	if (ret < 0) {
-		printf("%s: Can't select device\n\r", __func__);
-		return -1;
-	}
-
-	printf("%s: read bytes_number %d\n\r", __func__, bytes_number); // DEBUG
-	printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
-	ret = read(linux_desc->fd, data, bytes_number);
-	perror("Return"); // DEBUG
-	if (ret < 0) {
-		printf("%s: Can't read from file\n\r", __func__);
-		return -1;
-	}
-	printf("%s: ret %d\n\r", __func__, ret); // DEBUG
-	printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
-	if (stop_bit) {
-		// Unused variable - fix compiler warning
+		printf("%s: ret %d\n\r", __func__, ret); // DEBUG
+		printf("%s: Data write 0x%X\n\r", __func__, *data); // DEBUG
+	} else {
+		gp_linux_i2c_rdwr_reg_to_read = data;
 	}
 
 	return 0;
@@ -227,7 +188,7 @@ int32_t linux_i2c_read(struct no_os_i2c_desc *desc,
  * @param linux_rdwr_reg_to_read - Extern global variable. The register to read.
  * @return 0 in case of success, -1 otherwise.
  */
-int32_t linux_i2c_read_write_no_stop(struct no_os_i2c_desc *desc,
+int32_t linux_i2c_write_read_no_stop(struct no_os_i2c_desc *desc,
 		       uint8_t *data,
 		       uint8_t bytes_number,
 		       uint8_t stop_bit)
@@ -242,10 +203,10 @@ int32_t linux_i2c_read_write_no_stop(struct no_os_i2c_desc *desc,
 	struct i2c_msg messages[2];
 	
 	// Write to device what register to read.
-	messages[0].addr=desc->slave_address;
-	messages[0].flags=0;	// Write
-	messages[0].len=1;		// 1 byte
-	messages[0].buf=&linux_rdwr_reg_to_read;  // The register to read
+	messages[0].addr = desc->slave_address;
+	messages[0].flags = 0;	// Write
+	messages[0].len = 1;	// 1 byte
+	messages[0].buf = gp_linux_i2c_rdwr_reg_to_read;  // The register to read
 	
 	// Read from the target register.
 	messages[1].addr=desc->slave_address;
@@ -274,21 +235,90 @@ int32_t linux_i2c_read_write_no_stop(struct no_os_i2c_desc *desc,
 }
 
 /**
+ * @brief Read data from a slave device.
+ * @param desc - The I2C descriptor.
+ * @param data - Buffer that will store the received data.
+ * @param bytes_number - Number of bytes to read.
+ * @param stop_bit - Stop condition control.
+ *                   Example: 0 - A stop condition will not be generated;
+ *                            1 - A stop condition will be generated.
+ * @return 0 in case of success, -1 otherwise.
+ */
+int32_t linux_i2c_read(struct no_os_i2c_desc *desc,
+		       uint8_t *data,
+		       uint8_t bytes_number,
+		       uint8_t stop_bit)
+{
+	struct linux_i2c_desc *linux_desc;
+	int32_t ret;
+
+	linux_desc = desc->extra;
+
+	if (NULL == gp_linux_i2c_rdwr_reg_to_read) {
+		printf("%s: ioctl I2C_SLAVE %d\n\r", __func__, I2C_SLAVE); // DEBUG
+		printf("%s: ioctl desc->slave_address %d\n\r", __func__, desc->slave_address); // DEBUG
+		ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
+		if (ret < 0) {
+			printf("%s: Can't select device\n\r", __func__);
+			return -1;
+		}
+
+		printf("%s: read bytes_number %d\n\r", __func__, bytes_number); // DEBUG
+		printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
+		ret = read(linux_desc->fd, data, bytes_number);
+		perror("Return"); // DEBUG
+		if (ret < 0) {
+			printf("%s: Can't read from file\n\r", __func__);
+			return -1;
+		}
+		printf("%s: ret %d\n\r", __func__, ret); // DEBUG
+		printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
+	} else {
+		struct i2c_rdwr_ioctl_data packets;
+		struct i2c_msg messages[2];
+		
+		// Write to device what register to read.
+		messages[0].addr = desc->slave_address;
+		messages[0].flags = 0;	// Write
+		messages[0].len = 1;	// 1 byte
+		messages[0].buf = gp_linux_i2c_rdwr_reg_to_read;
+		
+		// Read from the target register.
+		messages[1].addr = desc->slave_address;
+		messages[1].flags = I2C_M_RD;	// Read
+		messages[1].len = bytes_number;	// How many bytes to read
+		messages[1].buf = data;			// Where to store the read data
+		
+		packets.msgs = messages;
+		packets.nmsgs = 2;
+		
+		printf("%s: read bytes_number %d\n\r", __func__, bytes_number); // DEBUG
+		printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
+		ret = ioctl(linux_desc->fd, I2C_RDWR, &packets);
+		perror("Return"); // DEBUG
+		if (ret < 0) {
+			printf("%s: Can't read from file\n\r", __func__);
+			return -1;
+		}
+		printf("%s: ret %d\n\r", __func__, ret); // DEBUG
+		printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
+
+		gp_linux_i2c_rdwr_reg_to_read = NULL;
+	}
+	
+	if (stop_bit) {
+		// Unused variable - fix compiler warning
+	}
+
+	return 0;
+}
+
+/**
  * @brief Linux platform specific I2C platform ops structure
  */
 const struct no_os_i2c_platform_ops linux_i2c_ops = {
 	.i2c_ops_init = &linux_i2c_init,
 	.i2c_ops_write = &linux_i2c_write,
 	.i2c_ops_read = &linux_i2c_read,
-	.i2c_ops_remove = &linux_i2c_remove
-};
-
-/**
- * @brief I2C platform ops structure with custom read method
- */
-const struct no_os_i2c_platform_ops linux_i2c_ops_custom = {
-	.i2c_ops_init = &linux_i2c_init,
-	.i2c_ops_write = &linux_i2c_write,
-	.i2c_ops_read = &linux_i2c_read_write_no_stop,	// Use custom read method
 	.i2c_ops_remove = &linux_i2c_remove
 };

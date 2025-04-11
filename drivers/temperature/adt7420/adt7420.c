@@ -38,8 +38,12 @@
 #include "no_os_print_log.h" //DEBUG
 #include "adt7420.h"
 
+/*
+#ifdef LINUX_PLATFORM
 #include "linux_i2c.h"	// linux_rdwr_reg_to_read;
-uint8_t linux_rdwr_reg_to_read;
+uint8_t linux_i2c_rdwr_reg_to_read;
+#endif  // LINUX_PLATFORM
+*/
 
 const struct adt7420_chip_info chip_info[] = {
 	[ID_ADT7410] = {
@@ -465,10 +469,9 @@ int adt7420_i2c_reg_read(struct adt7420_dev *dev, uint16_t register_address,
 	else
 		num_bytes = 1;
 
-	//~ if (no_os_i2c_write(dev->i2c_desc, &register_address, 1,
-			    //~ 0)) //add a repeat start
-	//~ return -1;
-	linux_rdwr_reg_to_read = register_address;	// Set register to read from.
+	if (no_os_i2c_write(dev->i2c_desc, &register_address, 1,
+						0)) //add a repeat start
+		return -1;
 	if (no_os_i2c_read(dev->i2c_desc, data_buffer, num_bytes, 1))
 		return -1;
 
