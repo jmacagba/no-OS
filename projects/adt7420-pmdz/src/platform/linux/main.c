@@ -43,6 +43,5 @@ int example_main();
 *******************************************************************************/
 int main()
 {
-	pr_notice("Start linux main\n"); // DEBUG
 	return example_main();
 }

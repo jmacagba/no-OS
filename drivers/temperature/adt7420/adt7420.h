@@ -103,6 +103,7 @@
 
 #define ADT7420_RESET_DELAY 		1
 
+
 enum dev_interface {
 	SPI,
 	I2C,
