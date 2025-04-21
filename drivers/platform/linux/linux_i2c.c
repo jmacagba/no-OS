@@ -52,7 +52,9 @@ struct linux_i2c_desc {
 	/** /dev/i2c-"device_id" file descriptor */
 	int fd;
 	/** struct for write - repeated start - read operations */
-	struct i2c_msg tx_msg;
+	struct i2c_msg *messages;
+	/** length of messages */
+	int len_messages;
 };
 
 /**
@@ -147,31 +149,88 @@ int32_t linux_i2c_write(struct no_os_i2c_desc *desc,
 	int32_t ret;
 
 	linux_desc = desc->extra;
+	printf("%s: LEN MESSAGES: %d\n", __func__, linux_desc->len_messages); // DEBUG
 	
-	if (stop_bit != 0) {
-		printf("%s: ioctl I2C_SLAVE %d\n\r", __func__, I2C_SLAVE); // DEBUG
-		printf("%s: ioctl desc->slave_address %d\n\r", __func__, desc->slave_address); // DEBUG
-		ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
-		if (ret < 0) {
-			printf("%s: Can't select device\n\r", __func__);
-			return -1;
-		}
+	if (stop_bit) {
+		if (!linux_desc->len_messages) {
+			printf("%s: NORMAL OP\n", __func__); // DEBUG
+			printf("%s: ioctl I2C_SLAVE %d\n\r", __func__, I2C_SLAVE); // DEBUG
+			printf("%s: ioctl desc->slave_address %d\n\r", __func__, desc->slave_address); // DEBUG
+			ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
+			if (ret < 0) {
+				printf("%s: Can't select device\n\r", __func__);
+				return -1;
+			}
 
-		printf("%s: write bytes_number %d\n\r", __func__, bytes_number);
-		printf("%s: write data 0x%X\n\r", __func__, *data); // DEBUG
-		ret = write(linux_desc->fd, data, bytes_number);
-		if (ret < 0) {
-			printf("%s: Can't write to file\n\r", __func__);
-			return -1;
-		}
+			printf("%s: write bytes_number %d\n\r", __func__, bytes_number);
+			printf("%s: write data 0x%X\n\r", __func__, *data); // DEBUG
+			ret = write(linux_desc->fd, data, bytes_number);
+			if (ret < 0) {
+				printf("%s: Can't write to file\n\r", __func__);
+				return -1;
+			}
 
-		printf("%s: ret %d\n\r", __func__, ret); // DEBUG
-		printf("%s: Data write 0x%X\n\r", __func__, *data); // DEBUG
+			printf("%s: ret %d\n\r", __func__, ret); // DEBUG
+			printf("%s: Data write 0x%X\n\r", __func__, *data); // DEBUG
+		} else {
+			printf("%s: IOCTL + RDWR\n", __func__); // DEBUG
+			struct i2c_rdwr_ioctl_data packets;
+			
+			packets.msgs = linux_desc->messages;
+			packets.nmsgs = linux_desc->len_messages;
+			
+			printf("%s: read bytes_number %d\n\r", __func__, bytes_number); // DEBUG
+			printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
+			ret = ioctl(linux_desc->fd, I2C_RDWR, &packets);
+			perror("Return"); // DEBUG
+			if (ret < 0) {
+				printf("%s: Can't read from file\n\r", __func__);
+				return -1;
+			}
+			printf("%s: ret %d\n\r", __func__, ret); // DEBUG
+			printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
+			
+			// Reset messages
+			no_os_free(linux_desc->messages);
+			linux_desc->len_messages = 0;
+			linux_desc->messages = NULL;
+		}
 	} else {
-		linux_desc->tx_msg.addr = desc->slave_address;
-		linux_desc->tx_msg.flags = 0;	// Write
-		linux_desc->tx_msg.len = bytes_number;
-		linux_desc->tx_msg.buf = data;
+		printf("%s: WRITE NO STOP BIT IOCTL + RDWR\n", __func__); // DEBUG
+		struct i2c_msg write_msg;
+		void *ptr;
+
+		// Write to device what register to read.
+		write_msg.addr = desc->slave_address;
+		write_msg.flags = 0;	// Write
+		write_msg.len = bytes_number;
+		write_msg.buf = data;
+
+		// Allocate memory for messages array
+		if (linux_desc->messages) {
+			printf("%s: ADJUSTING MESSAGES ARRAY SIZE\n", __func__); // DEBUG
+			ptr = realloc(linux_desc->messages, sizeof(struct i2c_msg) * (linux_desc->len_messages + 1));
+			if (!ptr) {
+				printf("%s: Can't allocate memory\n\r", __func__);
+				return -ENOMEM;
+			}
+			linux_desc->messages = ptr;
+		} else {
+			printf("%s: ALLOCATING MEMORY FOR MESSAGES ARRAY\n", __func__); // DEBUG
+			linux_desc->messages = no_os_malloc(sizeof(struct i2c_msg));
+			if (!linux_desc->messages) {
+				printf("%s: Can't allocate memory\n\r", __func__);
+				return -1;
+			}
+		}
+
+		// Add the new message to the array
+		size_t buh = linux_desc->len_messages; // DEBUG
+		linux_desc->messages[linux_desc->len_messages] = write_msg;
+		printf("addr: %x\n", linux_desc->messages[buh].addr); // DEBUG
+		printf("flag: %d\n", linux_desc->messages[buh].flags); // DEBUG
+		printf("len: %d\n", linux_desc->messages[buh].len); // DEBUG
+		linux_desc->len_messages++;
 	}
 
 	return 0;
@@ -196,61 +255,117 @@ int32_t linux_i2c_read(struct no_os_i2c_desc *desc,
 	int32_t ret;
 
 	linux_desc = desc->extra;
+	printf("%s: LEN MESSAGES: %d\n", __func__, linux_desc->len_messages); // DEBUG
 
-	if (0 == linux_desc->tx_msg.addr) {
-		printf("%s: ioctl I2C_SLAVE %d\n\r", __func__, I2C_SLAVE); // DEBUG
-		printf("%s: ioctl desc->slave_address %d\n\r", __func__, desc->slave_address); // DEBUG
-		ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
-		if (ret < 0) {
-			printf("%s: Can't select device\n\r", __func__);
-			return -1;
-		}
-
-		printf("%s: read bytes_number %d\n\r", __func__, bytes_number); // DEBUG
-		printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
-		ret = read(linux_desc->fd, data, bytes_number);
-		perror("Return"); // DEBUG
-		if (ret < 0) {
-			printf("%s: Can't read from file\n\r", __func__);
-			return -1;
-		}
-		printf("%s: ret %d\n\r", __func__, ret); // DEBUG
-		printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
-	} else {
-		struct i2c_rdwr_ioctl_data packets;
-		struct i2c_msg messages[2];
-		
-		// Write to device what register to read.
-		messages[0] = linux_desc->tx_msg;
-		
-		// Read from the target register.
-		messages[1].addr = desc->slave_address;
-		messages[1].flags = I2C_M_RD;	// Read
-		messages[1].len = bytes_number;	// How many bytes to read
-		messages[1].buf = data;			// Where to store the read data
-		
-		packets.msgs = messages;
-		packets.nmsgs = 2;
-		
-		printf("%s: read bytes_number %d\n\r", __func__, bytes_number); // DEBUG
-		printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
-		ret = ioctl(linux_desc->fd, I2C_RDWR, &packets);
-		perror("Return"); // DEBUG
-		if (ret < 0) {
-			printf("%s: Can't read from file\n\r", __func__);
-			return -1;
-		}
-		printf("%s: ret %d\n\r", __func__, ret); // DEBUG
-		printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
-		
-		// Reset tx_msg
-		linux_desc->tx_msg.addr = 0;
-		linux_desc->tx_msg.len = 0;
-		linux_desc->tx_msg.buf = NULL;
-	}
-	
 	if (stop_bit) {
-		// Unused variable - fix compiler warning
+		if (!linux_desc->len_messages) {
+			printf("%s: NORMAL OP\n", __func__); // DEBUG
+			printf("%s: ioctl I2C_SLAVE %d\n\r", __func__, I2C_SLAVE); // DEBUG
+			printf("%s: ioctl desc->slave_address %d\n\r", __func__, desc->slave_address); // DEBUG
+			ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
+			if (ret < 0) {
+				printf("%s: Can't select device\n\r", __func__);
+				return -1;
+			}
+	
+			printf("%s: read bytes_number %d\n\r", __func__, bytes_number); // DEBUG
+			printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
+			ret = read(linux_desc->fd, data, bytes_number);
+			perror("Return"); // DEBUG
+			if (ret < 0) {
+				printf("%s: Can't read from file\n\r", __func__);
+				return -1;
+			}
+			printf("%s: ret %d\n\r", __func__, ret); // DEBUG
+			printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
+		} else {
+			printf("%s: IOCTL + RDWR\n", __func__); // DEBUG
+			struct i2c_rdwr_ioctl_data packets;
+			
+			struct i2c_msg read_msg;
+			void *ptr;
+
+			// Read from the target register
+			read_msg.addr = desc->slave_address;
+			read_msg.flags = I2C_M_RD;	// Read
+			read_msg.len = bytes_number;
+			read_msg.buf = data;
+
+			// Allocate memory for messages array
+			if (linux_desc->messages) {
+				ptr = realloc(linux_desc->messages, sizeof(struct i2c_msg) * (linux_desc->len_messages + 1));
+				if (!ptr) {
+					printf("%s: Can't allocate memory\n\r", __func__);
+					return -ENOMEM;
+				}
+				linux_desc->messages = ptr;
+			} else {
+				linux_desc->messages = no_os_malloc(sizeof(struct i2c_msg));
+				if (!linux_desc->messages) {
+					printf("%s: Can't allocate memory\n\r", __func__);
+					return -1;
+				}
+			}
+
+			// Add the new message to the array
+			linux_desc->messages[linux_desc->len_messages] = read_msg;
+			linux_desc->len_messages++;
+			
+			//~ size_t buh = linux_desc->len_messages - 1; // DEBUG
+			//~ printf("addr: %x\n", linux_desc->messages[buh].addr); // DEBUG
+			//~ printf("buf[0]: %x\n", linux_desc->messages[buh].buf[0]); // DEBUG
+			//~ printf("flag: %d\n", linux_desc->messages[buh].flags); // DEBUG
+			//~ printf("len: %d\n", linux_desc->messages[buh].len); // DEBUG
+			
+			packets.msgs = linux_desc->messages;
+			packets.nmsgs = linux_desc->len_messages;
+			
+			printf("%s: read bytes_number %d\n\r", __func__, bytes_number); // DEBUG
+			printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
+			ret = ioctl(linux_desc->fd, I2C_RDWR, &packets);
+			perror("Return"); // DEBUG
+			if (ret < 0) {
+				printf("%s: Can't read from file\n\r", __func__);
+				return -1;
+			}
+			printf("%s: ret %d\n\r", __func__, ret); // DEBUG
+			printf("%s: Data Read %d\n\r", __func__, *data); // DEBUG
+			
+			// Reset messages
+			no_os_free(linux_desc->messages);
+			linux_desc->len_messages = 0;
+			linux_desc->messages = NULL;
+		}
+	} else {
+		printf("%s: READ NO STOP BIT IOCTL + RDWR\n", __func__); // DEBUG
+		struct i2c_msg read_msg;
+		void *ptr;
+
+		// Read from the target register
+		read_msg.addr = desc->slave_address;
+		read_msg.flags = I2C_M_RD;	// Read
+		read_msg.len = bytes_number;
+		read_msg.buf = data;
+
+		// Allocate memory for messages array
+		if (linux_desc->messages) {
+			ptr = realloc(linux_desc->messages, sizeof(struct i2c_msg) * (linux_desc->len_messages + 1));
+			if (!ptr) {
+				printf("%s: Can't allocate memory\n\r", __func__);
+				return -ENOMEM;
+			}
+			linux_desc->messages = ptr;
+		} else {
+			linux_desc->messages = no_os_malloc(sizeof(struct i2c_msg));
+			if (!linux_desc->messages) {
+				printf("%s: Can't allocate memory\n\r", __func__);
+				return -1;
+			}
+		}
+
+		// Add the new message to the array
+		linux_desc->messages[linux_desc->len_messages] = read_msg;
+		linux_desc->len_messages++;
 	}
 
 	return 0;
