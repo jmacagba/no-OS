@@ -53,7 +53,7 @@ struct linux_i2c_desc {
 	int fd;
 	/** struct for write - repeated start - read operations */
 	struct i2c_msg *messages;
-	/** length of messages */
+	/** count of i2c messages in array */
 	int len_messages;
 };
 
@@ -83,12 +83,12 @@ int32_t linux_i2c_add_msg(struct no_os_i2c_desc *desc,
 	if (read) {
 		msg.flags = I2C_M_RD;
 	} else {
-		msg.flags = 0;
+		msg.flags = 0;  // Write
 	}
 
 	if (linux_desc->messages) {
 		ptr = realloc(linux_desc->messages, sizeof(struct i2c_msg) * 
-										(linux_desc->len_messages + 1));
+				(linux_desc->len_messages + 1));
 		if (!ptr) {
 			return -ENOMEM;
 		}
@@ -216,37 +216,23 @@ int32_t linux_i2c_remove(struct no_os_i2c_desc *desc)
  * @return 0 in case of success, -1 otherwise.
  */
 int32_t linux_i2c_write(struct no_os_i2c_desc *desc,
-			uint8_t *data,
-			uint8_t bytes_number,
-			uint8_t stop_bit)
+				uint8_t *data,
+				uint8_t bytes_number,
+				uint8_t stop_bit)
 {
 	struct linux_i2c_desc *linux_desc;
 	int32_t ret;
 
 	linux_desc = desc->extra;
 
-	if (!stop_bit || linux_desc->messages) {
-		ret = linux_i2c_add_msg(desc, data, bytes_number, 0);
-		if (ret < 0) {
-			printf("%s: Can't allocate memory\n\r", __func__);
-			return -1;
-		}
+	ret = linux_i2c_add_msg(desc, data, bytes_number, 0);
+	if (ret < 0) {
+		printf("%s: Can't allocate memory\n\r", __func__);
+		return -1;
 	}
-
-	if (stop_bit && linux_desc->len_messages) {
+	
+	if (stop_bit) {
 		ret = linux_i2c_send_msg(desc);
-		if (ret < 0) {
-			printf("%s: Can't write to file\n\r", __func__);
-			return -1;
-		}
-	} else if (stop_bit && !linux_desc->len_messages) {
-		ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
-		if (ret < 0) {
-			printf("%s: Can't select device\n\r", __func__);
-			return -1;
-		}
-
-		ret = write(linux_desc->fd, data, bytes_number);
 		if (ret < 0) {
 			printf("%s: Can't write to file\n\r", __func__);
 			return -1;
@@ -267,36 +253,23 @@ int32_t linux_i2c_write(struct no_os_i2c_desc *desc,
  * @return 0 in case of success, -1 otherwise.
  */
 int32_t linux_i2c_read(struct no_os_i2c_desc *desc,
-		       uint8_t *data,
-		       uint8_t bytes_number,
-		       uint8_t stop_bit)
+				uint8_t *data,
+				uint8_t bytes_number,
+				uint8_t stop_bit)
 {
 	struct linux_i2c_desc *linux_desc;
 	int32_t ret;
 
 	linux_desc = desc->extra;
 
-	if (!stop_bit || linux_desc->messages) {
-		ret = linux_i2c_add_msg(desc, data, bytes_number, 1);
-		if (ret < 0) {
-			printf("%s: Can't allocate memory\n\r", __func__);
-			return -1;
-		}
+	ret = linux_i2c_add_msg(desc, data, bytes_number, 1);
+	if (ret < 0) {
+		printf("%s: Can't allocate memory\n\r", __func__);
+		return -1;
 	}
 
-	if (stop_bit && linux_desc->len_messages) {
+	if (stop_bit) {
 		ret = linux_i2c_send_msg(desc);
-		if (ret < 0) {
-			printf("%s: Can't read from file\n\r", __func__);
-			return -1;
-		}
-	} else if (stop_bit && !linux_desc->len_messages) {
-		ret = ioctl(linux_desc->fd, I2C_SLAVE, desc->slave_address);
-		if (ret < 0) {
-			printf("%s: Can't select device\n\r", __func__);
-			return -1;
-		}
-		ret = read(linux_desc->fd, data, bytes_number);
 		if (ret < 0) {
 			printf("%s: Can't read from file\n\r", __func__);
 			return -1;
