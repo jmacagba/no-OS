@@ -36,7 +36,5 @@
 
 #include "platform_includes.h"
 #include <stddef.h>
-extern struct no_os_gpio_init_param adis1646x_gpio_reset_ip;
-extern struct adis_init_param adis1646x_ip;
 
 #endif /* __COMMON_DATA_H__ */
