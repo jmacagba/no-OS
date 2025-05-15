@@ -241,14 +241,14 @@ int32_t linux_gpio_get_value(struct no_os_gpio_desc *desc,
 	// Get Line Value
 	memset(&line_value, 0, sizeof(line_value));
 	line_value.mask = 1; // Only get one line (or one GPIO)
-	ret = ioctl(linux_desc->line_fd, GPIO_V2_LINE_SET_VALUES_IOCTL, &line_value);
+	ret = ioctl(linux_desc->line_fd, GPIO_V2_LINE_GET_VALUES_IOCTL, &line_value);
 	if(ret<0)
 	{
-		printf("%s: Can't set line value\n\r", __func__);
+		printf("%s: Can't get line value\n\r", __func__);
 		return -1;
 	}
 
-	if (line_value.bits == '0')
+	if (line_value.bits == 0)
 		*value = NO_OS_GPIO_LOW;
 	else
 		*value = NO_OS_GPIO_HIGH;
