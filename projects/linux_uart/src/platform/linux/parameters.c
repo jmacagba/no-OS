@@ -34,5 +34,5 @@
 #include "parameters.h"
 
 struct linux_uart_init_param luip = {
-	.device_id = "ttyS0"
+	.device_id = "ttyAMA0" // For CM5, this was the device name if using UART0
 };

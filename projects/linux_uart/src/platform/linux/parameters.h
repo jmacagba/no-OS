@@ -37,7 +37,7 @@
 #include "common_data.h"
 #include "linux_uart.h"
 
-#define UART_DEVICE_ID		0 // /dev/ttyyS0
+#define UART_DEVICE_ID		0 // TBD if needed, so far in testing, this does not affect runtime
 #define UART_IRQ_ID			-1 // TBD
 #define UART_BAUDRATE		9600
 

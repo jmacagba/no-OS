@@ -43,14 +43,16 @@ int example_main()
 	no_os_uart_init(&uart, &uip);
 	if (ret)
 		return ret;
-
+	printf("Rx Example: \n");
 	uint8_t rx_data[9] = {0};
 
 	no_os_uart_read(uart, rx_data, 9);
+
+	printf("\nReceived: ");
 	for (int i=0; i<9; i++) {
 		printf("%0x ", rx_data[i]);
 	}
-
+	printf("\n");
 	no_os_uart_remove(uart);
 
 	return 0;

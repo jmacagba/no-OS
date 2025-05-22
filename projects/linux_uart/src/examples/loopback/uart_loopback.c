@@ -1,6 +1,6 @@
 /***************************************************************************//**
- *   @file   linux_uart/src/examples/tx/uart_tx.c
- *   @brief  UART Tx example
+ *   @file   linux_uart/src/examples/loopback/uart_loopback.c
+ *   @brief  UART Rx example
  *   @author Jamila Macagba (jamila.macagba@analog.com)
 ********************************************************************************
  * Copyright 2025(c) Analog Devices, Inc.
@@ -32,7 +32,7 @@
 *******************************************************************************/
 
 #include "no_os_uart.h"
-#include "uart_tx.h"
+#include "uart_loopback.h"
 #include "common_data.h"
 #include <stdio.h>
 
@@ -43,7 +43,9 @@ int example_main()
 	no_os_uart_init(&uart, &uip);
 	if (ret)
 		return ret;
-	printf("Tx Example: \n");
+
+	printf("Loopback Example: \n");
+	uint8_t rx_data[9] = {0};
 	uint8_t tx_data[9] = {0};
 	tx_data[0] = 0x44; // D
 	tx_data[1] = 0x45; // E
@@ -60,6 +62,12 @@ int example_main()
 	printf("\nTransmit: ");
 	for (int i=0; i<9; i++) {
 		printf("%0x ", tx_data[i]);
+	}
+
+	no_os_uart_read(uart, rx_data, 9);
+	printf("\nReceived: ");
+	for (int i=0; i<9; i++) {
+		printf("%0x ", rx_data[i]);
 	}
 	printf("\n");
 	no_os_uart_remove(uart);

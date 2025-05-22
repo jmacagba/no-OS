@@ -42,6 +42,10 @@
 #include "uart_rx.h"
 #endif
 
+#ifdef LOOPBACK_EXAMPLE
+#include "uart_loopback.h"
+#endif
+
 int main()
 {
 	return example_main();
