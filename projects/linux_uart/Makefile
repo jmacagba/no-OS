@@ -1,7 +1,8 @@
 # Choose example you want to run (only 1 allowed per build)
 TX_EXAMPLE = n
 RX_EXAMPLE = n
-LOOPBACK_EXAMPLE = y
+LOOPBACK_EXAMPLE = n
+BMS_DEBUG = y
 
 include ../../tools/scripts/generic_variables.mk
 

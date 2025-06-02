@@ -46,6 +46,10 @@
 #include "uart_loopback.h"
 #endif
 
+#ifdef BMS_DEBUG
+#include "bms_debug.h"
+#endif
+
 int main()
 {
 	return example_main();

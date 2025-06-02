@@ -1,6 +1,6 @@
 /***************************************************************************//**
- *   @file   linux_uart/src/platform/linux/parameters.c
- *   @brief  Defines parameters to be used by linux_uart examples.
+ *   @file   linux_uart/src/examples/loopback/uart_loopback.h
+ *   @brief  UART Rx example
  *   @author Jamila Macagba (jamila.macagba@analog.com)
 ********************************************************************************
  * Copyright 2025(c) Analog Devices, Inc.
@@ -31,8 +31,10 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "parameters.h"
 
-struct linux_uart_init_param luip = {
-	.device_id = "ttyAMA1" // For CM5, this was the device name if using UART0
-};
+#ifndef __UART_EXAMPLE_H__
+#define __UART_EXAMPLE_H__
+
+int example_main();
+
+#endif /* __UART_EXAMPLE_H__ */
