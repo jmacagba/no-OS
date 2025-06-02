@@ -201,6 +201,10 @@ static int32_t linux_uart_init(struct no_os_uart_desc **desc,
 
 	linux_desc->terminal->c_cflag |= CREAD;
 
+	// Add interbyte timeout
+	linux_desc->terminal->c_cc[VMIN] = 1; // 1 Byte
+	linux_desc->terminal->c_cc[VTIME] = 10;
+
 	tcsetattr(linux_desc->fd, TCSANOW, linux_desc->terminal);
 
 	tcflush(linux_desc->fd, TCIOFLUSH);
@@ -257,14 +261,20 @@ static int32_t linux_uart_write(struct no_os_uart_desc *desc,
 	struct linux_uart_desc *linux_desc;
 	uint32_t count = 0;
 	int32_t ret;
+	int retry = 3;
 
 	linux_desc = desc->extra;
 
-	while (count < bytes_number) {
+	while ((count < bytes_number) && (retry > 0)) {
 		ret = write(linux_desc->fd, data, bytes_number);
 		if (ret > 0)
 			count += ret;
+		else
+			retry -= 1;
 	}
+
+	if(retry == 0)
+		return -1;
 
 	return 0;
 };
@@ -282,14 +292,20 @@ static int32_t linux_uart_read(struct no_os_uart_desc *desc, uint8_t *data,
 	struct linux_uart_desc *linux_desc;
 	uint32_t count = 0;
 	int ret;
+	int retry = 3;
 
 	linux_desc = desc->extra;
 
-	while (count < bytes_number) {
+	while ((count < bytes_number) && (retry > 0)) {
 		ret = read(linux_desc->fd, &data[count], bytes_number - count);
 		if (ret > 0)
 			count += ret;
+		else
+			retry -= 1;
 	}
+
+	if(retry == 0)
+		return -1;
 
 	return 0;
 };
