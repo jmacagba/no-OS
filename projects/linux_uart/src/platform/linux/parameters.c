@@ -37,5 +37,5 @@ struct linux_uart_init_param luip = {
 	.device_id = "ttyAMA1", // For CM5, this was the device name if using UART0
 	.flags = (O_RDWR | O_NOCTTY),
 	.min_read_bytes = 0,
-	.read_timeout_interval = 10,
+	.read_timeout_interval = 1, // 1 ds = 100 ms
 };

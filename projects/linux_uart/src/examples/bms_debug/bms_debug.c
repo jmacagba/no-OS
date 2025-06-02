@@ -67,9 +67,10 @@ int example_main()
 	for (int i=0; i<5; i++) {
 		printf("%0x ", rx_data[i]);
 	}
+	printf("\n");
     bm_id = rx_data[1]; // Byte 2
     command_code = rx_data[2]; // Byte 3
-    sleep(2);
+    no_os_mdelay(10);
     // Sample Data Frame for Fail Status 1
     if(command_code == 0x01)
     {
