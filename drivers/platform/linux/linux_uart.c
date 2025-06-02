@@ -202,8 +202,8 @@ static int32_t linux_uart_init(struct no_os_uart_desc **desc,
 	linux_desc->terminal->c_cflag |= CREAD;
 
 	// Add interbyte timeout
-	linux_desc->terminal->c_cc[VMIN] = 1; // 1 Byte
-	linux_desc->terminal->c_cc[VTIME] = 10;
+	linux_desc->terminal->c_cc[VMIN] = linux_init->min_read_bytes;
+	linux_desc->terminal->c_cc[VTIME] = linux_init->read_timeout_interval;
 
 	tcsetattr(linux_desc->fd, TCSANOW, linux_desc->terminal);
 

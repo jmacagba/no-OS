@@ -46,6 +46,10 @@ struct linux_uart_init_param {
 	const char *device_id;
 	/** Flags for File Descriptor */
   int flags;
+  /** Minimum bytes for Read */
+  int min_read_bytes;
+  /** Timeout interval for Read */
+  int read_timeout_interval;
 };
 
 /**
