@@ -34,6 +34,7 @@
 #define LINUX_UART_H_
 
 #include "no_os_uart.h"
+#include <fcntl.h>
 
 /**
  * @struct linux_uart_init_param
@@ -43,6 +44,8 @@
 struct linux_uart_init_param {
 	/** UART device ID (/dev/"device_id") */
 	const char *device_id;
+	/** Flags for File Descriptor */
+  int flags;
 };
 
 /**

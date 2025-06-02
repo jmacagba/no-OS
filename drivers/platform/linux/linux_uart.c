@@ -95,7 +95,7 @@ static int32_t linux_uart_init(struct no_os_uart_desc **desc,
 		goto free_linux_desc;
 	}
 
-	linux_desc->fd = open(path, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	linux_desc->fd = open(path, linux_init->flags);
 	if (linux_desc->fd < 0) {
 		printf("%s: Can't open %s\n\r", __func__, path);
 		ret = -ENOENT;
