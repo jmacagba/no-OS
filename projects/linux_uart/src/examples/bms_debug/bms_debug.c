@@ -71,8 +71,8 @@ int example_main()
     bm_id = rx_data[1]; // Byte 2
     command_code = rx_data[2]; // Byte 3
     no_os_mdelay(10);
-    // Sample Data Frame for Fail Status 1
-    if(command_code == 0x01)
+    // Sample Data Frame for Fail Status 1, Fail Status 2
+    if((command_code == 0x01) || (command_code == 0x13))
     {
       num_of_data = 1; // Only 1 Byte
       tx_data[0] = start_command;
@@ -89,6 +89,64 @@ int example_main()
 
       printf("\nTransmit: ");
       for (int i=0; i<7; i++) {
+        printf("%0x ", tx_data[i]);
+      }
+      printf("\n");
+    }
+    else if (command_code == 0x02) // Cell Voltage
+    {
+      num_of_data = 16; // 16 bytes
+      tx_data[0] = start_command;
+      tx_data[1] = bm_id;
+      tx_data[2] = command_code;
+      tx_data[3] = num_of_data;
+      tx_data[4] = 1;
+      tx_data[5] = 1;
+      tx_data[6] = 1;
+      tx_data[7] = 1;
+      tx_data[8] = 1;
+      tx_data[9] = 1;
+      tx_data[10] = 1;
+      tx_data[11] = 1;
+      tx_data[12] = 1;
+      tx_data[13] = 1;
+      tx_data[14] = 1;
+      tx_data[15] = 1;
+      tx_data[16] = 1;
+      tx_data[17] = 1;
+      tx_data[18] = 1;
+      tx_data[19] = 1;
+      
+      checksum = calculateChecksum(tx_data, 20);
+      tx_data[20] = checksum;
+      tx_data[21] = 0; // Reserved
+
+      no_os_uart_write(uart, tx_data, 22);
+
+      printf("\nTransmit: ");
+      for (int i=0; i<22; i++) {
+        printf("%0x ", tx_data[i]);
+      }
+      printf("\n");
+    }
+    else if((command_code == 0x03) || (command_code == 0x04) || (command_code == 0x05) || (command_code == 0x11))     // For Current, Temperature, RC, FCC
+    {
+      num_of_data = 2; // Only 2 Bytes
+      tx_data[0] = start_command;
+      tx_data[1] = bm_id;
+      tx_data[2] = command_code;
+      tx_data[3] = num_of_data;
+      tx_data[4] = 1;
+      tx_data[5] = 1;
+
+      checksum = calculateChecksum(tx_data, 6);
+      tx_data[6] = checksum;
+      tx_data[7] = 0; // Reserved
+
+      no_os_uart_write(uart, tx_data, 8);
+
+      printf("\nTransmit: ");
+      for (int i=0; i<8; i++) {
         printf("%0x ", tx_data[i]);
       }
       printf("\n");
