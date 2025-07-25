@@ -2,7 +2,7 @@
  *   @file   linux/linux_gpio.c
  *   @brief  Implementation of Linux platform GPIO Driver.
  *   @author Dragos Bogdan (dragos.bogdan@analog.com)
- * 	 @author Jamila Macagba (Jamila.Macagba@analog.com)
+ *   @author Jamila Macagba (Jamila.Macagba@analog.com)
 ********************************************************************************
  * Copyright 2020, 2025(c) Analog Devices, Inc.
  *
@@ -73,9 +73,9 @@ int32_t linux_gpio_get(struct no_os_gpio_desc **desc,
 	char path[64];
 	int ret;
 	int timeout;
-	struct gpiochip_info chip_info;
-	struct gpio_v2_line_info line_info;
-	struct gpio_v2_line_request line_request;
+	struct gpiochip_info chip_info = {0};
+	struct gpio_v2_line_info line_info = {0};
+	struct gpio_v2_line_request line_request = {0};
 
 	descriptor = no_os_calloc(1, sizeof(*descriptor));
 	if (!descriptor)
@@ -101,16 +101,14 @@ int32_t linux_gpio_get(struct no_os_gpio_desc **desc,
 		goto close_dir;
 	}
 
-	// Get Chip Info
-	memset(&chip_info, 0, sizeof(chip_info));
+	/* Get Chip Info */
 	ret = ioctl(linux_desc->chip_fd, GPIO_GET_CHIPINFO_IOCTL, &chip_info);
 	if (ret < 0) {
 		printf("%s: Can't get chipinfo\n\r", __func__);
 		goto close_dir;
 	}
 
-	// Get Line Info
-	memset(&line_info, 0, sizeof(line_info));
+	/* Get Line Info */
 	line_info.offset = descriptor->number;
 	ret = ioctl(linux_desc->chip_fd, GPIO_V2_GET_LINEINFO_IOCTL, &line_info);
 	if (ret < 0) {
@@ -118,8 +116,7 @@ int32_t linux_gpio_get(struct no_os_gpio_desc **desc,
 		goto close_dir;
 	}
 
-	// Get Line Request
-	memset(&line_request, 0, sizeof(line_request));
+	/* Get Line Request */
 	line_request.offsets[0] = descriptor->number;
 	line_request.num_lines = 1;
 	ret = ioctl(linux_desc->chip_fd, GPIO_V2_GET_LINE_IOCTL, &line_request);
@@ -200,14 +197,13 @@ int32_t linux_gpio_set_value(struct no_os_gpio_desc *desc,
 {
 	struct linux_gpio_desc *linux_desc;
 	int ret;
-	struct gpio_v2_line_values line_value;
+	struct gpio_v2_line_values line_value = {0};
 
 	linux_desc = desc->extra;
 
-	// Set Line Value
-	memset(&line_value, 0, sizeof(line_value));
+	/* Set Line Value */
 	line_value.bits = value;
-	line_value.mask = 1; // Only set one line (or one GPIO)
+	line_value.mask = 1; /* Only set one line (or one GPIO) */
 	ret = ioctl(linux_desc->line_fd, GPIO_V2_LINE_SET_VALUES_IOCTL, &line_value);
 	if (ret < 0) {
 		printf("%s: Can't set line value\n\r", __func__);
@@ -230,13 +226,12 @@ int32_t linux_gpio_get_value(struct no_os_gpio_desc *desc,
 {
 	struct linux_gpio_desc *linux_desc;
 	int ret;
-	struct gpio_v2_line_values line_value;
+	struct gpio_v2_line_values line_value = {0};
 
 	linux_desc = desc->extra;
 
-	// Get Line Value
-	memset(&line_value, 0, sizeof(line_value));
-	line_value.mask = 1; // Only get one line (or one GPIO)
+	/* Get Line Value */
+	line_value.mask = 1; /* Only get one line (or one GPIO) */
 	ret = ioctl(linux_desc->line_fd, GPIO_V2_LINE_GET_VALUES_IOCTL, &line_value);
 	if (ret < 0) {
 		printf("%s: Can't get line value\n\r", __func__);
@@ -260,12 +255,11 @@ int32_t linux_gpio_direction_input(struct no_os_gpio_desc *desc)
 {
 	struct linux_gpio_desc *linux_desc;
 	int ret;
-	struct gpio_v2_line_config line_config;
+	struct gpio_v2_line_config line_config = {0};
 
 	linux_desc = desc->extra;
 
-	// Set Line Config
-	memset(&line_config, 0, sizeof(line_config));
+	/* Set Line Config */
 	line_config.flags = GPIO_V2_LINE_FLAG_INPUT;
 	ret = ioctl(linux_desc->line_fd, GPIO_V2_LINE_SET_CONFIG_IOCTL, &line_config);
 	if (ret < 0) {
@@ -289,12 +283,11 @@ int32_t linux_gpio_direction_output(struct no_os_gpio_desc *desc,
 {
 	struct linux_gpio_desc *linux_desc;
 	int ret;
-	struct gpio_v2_line_config line_config;
+	struct gpio_v2_line_config line_config = {0};
 
 	linux_desc = desc->extra;
 
-	// Set Line Config
-	memset(&line_config, 0, sizeof(line_config));
+	/* Set Line Config */
 	line_config.flags = GPIO_V2_LINE_FLAG_OUTPUT;
 	ret = ioctl(linux_desc->line_fd, GPIO_V2_LINE_SET_CONFIG_IOCTL, &line_config);
 	if (ret < 0) {
@@ -320,12 +313,11 @@ int32_t linux_gpio_get_direction(struct no_os_gpio_desc *desc,
 {
 	struct linux_gpio_desc *linux_desc;
 	int ret;
-	struct gpio_v2_line_info line_info;
+	struct gpio_v2_line_info line_info = {0};
 
 	linux_desc = desc->extra;
 
-	// Get Line Info
-	memset(&line_info, 0, sizeof(line_info));
+	/* Get Line Info */
 	line_info.offset = desc->number;
 	ret = ioctl(linux_desc->chip_fd, GPIO_V2_GET_LINEINFO_IOCTL, &line_info);
 	if (ret < 0) {
@@ -334,11 +326,10 @@ int32_t linux_gpio_get_direction(struct no_os_gpio_desc *desc,
 		return -1;
 	}
 
-	if (line_info.flags & GPIO_V2_LINE_FLAG_OUTPUT) {
+	if (line_info.flags & GPIO_V2_LINE_FLAG_OUTPUT)
 		*direction = NO_OS_GPIO_OUT;
-	} else if (line_info.flags & GPIO_V2_LINE_FLAG_INPUT) {
+	else if (line_info.flags & GPIO_V2_LINE_FLAG_INPUT)
 		*direction = NO_OS_GPIO_IN;
-	}
 
 	return 0;
 }
