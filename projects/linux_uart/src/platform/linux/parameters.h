@@ -39,7 +39,7 @@
 
 #define UART_DEVICE_ID		0 // TBD if needed, so far in testing, this does not affect runtime
 #define UART_IRQ_ID			-1 // TBD
-#define UART_BAUDRATE		9600
+#define UART_BAUDRATE		38400
 
 #define UART_OPS            &linux_uart_ops
 

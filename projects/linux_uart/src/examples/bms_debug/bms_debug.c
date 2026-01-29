@@ -60,14 +60,21 @@ int example_main()
 
   while(1)
   {
-    printf("Waiting for command...\n");
-	ret = no_os_uart_read(uart, rx_data, 5);
+    ret = no_os_uart_read(uart, rx_data, 5);
+    printf("ret: %d\n", ret);
+    if (0 != ret)
+    {
+      no_os_mdelay(10);
+      continue;
+    }
 
-	printf("\nReceived: ");
-	for (int i=0; i<5; i++) {
-		printf("%0x ", rx_data[i]);
-	}
-	printf("\n");
+    printf("\nReceived: ");
+    for (int i=0; i<5; i++)
+    {
+      printf("%0x ", rx_data[i]);
+    }
+    printf("\n");
+
     bm_id = rx_data[1]; // Byte 2
     command_code = rx_data[2]; // Byte 3
     no_os_mdelay(10);
@@ -153,65 +160,88 @@ int example_main()
     }
     else if (command_code == 0x20) // Summary Data
     {
+      // Mock Summary Data from UART
       num_of_data = 50; //50 bytes
-      tx_data[0] = start_command;
-      tx_data[1] = bm_id;
-      tx_data[2] = command_code;
-      tx_data[3] = num_of_data;
-      tx_data[4] = 1;
-      tx_data[5] = 1;
-      tx_data[6] = 1;
-      tx_data[7] = 1;
-      tx_data[8] = 1;
-      tx_data[9] = 1;
-      tx_data[10] = 1;
-      tx_data[11] = 1;
-      tx_data[12] = 1;
-      tx_data[13] = 1;
-      tx_data[14] = 1;
-      tx_data[15] = 1;
-      tx_data[16] = 1;
-      tx_data[17] = 1;
-      tx_data[18] = 1;
-      tx_data[19] = 1;
-      tx_data[20] = 1;
-      tx_data[21] = 1;
-      tx_data[22] = 1;
-      tx_data[23] = 1;
-      tx_data[24] = 1;
-      tx_data[25] = 1;
-      tx_data[26] = 1;
-      tx_data[27] = 1;
-      tx_data[28] = 1;
-      tx_data[29] = 1;
-      tx_data[30] = 1;
-      tx_data[31] = 1;
-      tx_data[32] = 1;
-      tx_data[33] = 1;
-      tx_data[34] = 1;
-      tx_data[35] = 1;
-      tx_data[36] = 1;
-      tx_data[37] = 1;
-      tx_data[38] = 1;
-      tx_data[39] = 1;
-      tx_data[40] = 1;
-      tx_data[41] = 1;
-      tx_data[42] = 1;
-      tx_data[43] = 1;
-      tx_data[44] = 1;
-      tx_data[45] = 1;
-      tx_data[46] = 1;
-      tx_data[47] = 1;
-      tx_data[48] = 1;
-      tx_data[49] = 1;
-      tx_data[50] = 1;
-      tx_data[51] = 1;
-      tx_data[52] = 1;
-      tx_data[53] = 1;
 
-      checksum = calculateChecksum(tx_data, 54);
-      tx_data[54] = checksum;
-      tx_data[55] = 0; //Reserved
+      // 0x02 0x01 0x20 0x32
+      tx_data[0] = 0x02;
+      tx_data[1] = 0x01;
+      tx_data[2] = 0x20;
+      tx_data[3] = 0x32;
+  
+      // 0x40 0x03 0x63 0x63 0x64
+      tx_data[4] = 0x40;
+      tx_data[5] = 0x03;
+      tx_data[6] = 0x63;
+      tx_data[7] = 0x63;
+      tx_data[8] = 0x64;
+
+      // 0x00 0xD5 0x00 0x00 0x00
+      tx_data[9] = 0x00;
+      tx_data[10] = 0xD5;
+      tx_data[11] = 0x00;
+      tx_data[12] = 0x00;
+      tx_data[13] = 0x00;
+
+      // 0x00 0x68 0x10 0x00 0x00
+      tx_data[14] = 0x00;
+      tx_data[15] = 0x68;
+      tx_data[16] = 0x10;
+      tx_data[17] = 0x00;
+      tx_data[18] = 0x00;
+
+      // 0x00 0x00 0x08 0x34 0x08
+      tx_data[19] = 0x00;
+      tx_data[20] = 0x00;
+      tx_data[21] = 0x08;
+      tx_data[22] = 0x34;
+      tx_data[23] = 0x08;
+
+      // 0x34 0x08 0x33 0x01 0x13
+      tx_data[24] = 0x34;
+      tx_data[25] = 0x08;
+      tx_data[26] = 0x33;
+      tx_data[27] = 0x01;
+      tx_data[28] = 0x13;
+
+      // 0x10 0x68 0x10 0x01 0x68
+      tx_data[29] = 0x10;;
+      tx_data[30] = 0x68;
+      tx_data[31] = 0x10;
+      tx_data[32] = 0x01;
+      tx_data[33] = 0x68;
+
+      // 0x10 0x01 0x00 0xD7 0x01
+      tx_data[34] = 0x10;
+      tx_data[35] = 0x01;
+      tx_data[36] = 0x00;
+      tx_data[37] = 0xD7;
+      tx_data[38] = 0x01;
+
+      // 0x00 0xD5 0x01 0x00 0x00
+      tx_data[39] = 0x00;
+      tx_data[40] = 0xD5;
+      tx_data[41] = 0x01;
+      tx_data[42] = 0x00;
+      tx_data[43] = 0x00;
+
+      // 0x01 0x00 0x00 0x01 0x0D
+      tx_data[44] = 0x01;;
+      tx_data[45] = 0x00;
+      tx_data[46] = 0x00;
+      tx_data[47] = 0x01;
+      tx_data[48] = 0x0D;
+
+      // 0x05 0x01 0x0C 0xFD 0x01
+      tx_data[49] = 0x05;
+      tx_data[50] = 0x01;
+      tx_data[51] = 0x0C;
+      tx_data[52] = 0xFD;
+      tx_data[53] = 0x01;
+
+      // 0x59 0x00
+      tx_data[54] = 0x59;
+      tx_data[55] = 0x00;
 
       no_os_uart_write(uart, tx_data, 56);
 
