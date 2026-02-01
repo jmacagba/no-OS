@@ -101,7 +101,8 @@ int example_main()
       tx_data[2] = command_code;
       tx_data[3] = num_of_data;
 
-      tx_data[27] = 1;    // 24: Num Connected BM
+      tx_data[5] = 0x01;  // 2: Leader Battery Status
+      tx_data[27] = 0x01; // 24: Num Connected BM
       tx_data[32] = 0x01; // 29: BM ID Voltage Max
       tx_data[35] = 0x01; // 32: BM ID Voltage Min
       tx_data[44] = 0x02; // 41: BM ID Curernt Max
@@ -192,7 +193,6 @@ int example_main()
       // Normal Status
       case 0:
         tx_data[4] = 0;  // 1: Fail Status 1
-        tx_data[5] = 0;  // 2: Leader Battery Status
         tx_data[17] = 0; // 14: Fail Status 2
         tx_data[18] = 0; // 15: Fail Status 3
         tx_data[19] = 0; // 16: Leader Alarm 1
@@ -202,7 +202,6 @@ int example_main()
       // Trigger Fail Status 1
       case 1:
         tx_data[4] = 0xFF; // 1: Fail Status 1
-        tx_data[5] = 0;    // 2: Leader Battery Status
         tx_data[17] = 0;   // 14: Fail Status 2
         tx_data[18] = 0;   // 15: Fail Status 3
         tx_data[19] = 0;   // 16: Leader Alarm 1
@@ -212,7 +211,6 @@ int example_main()
       // Trigger Fail Status 2
       case 2:
         tx_data[4] = 0xFF;  // 1: Fail Status 1
-        tx_data[5] = 0;     // 2: Leader Battery Status
         tx_data[17] = 0xFF; // 14: Fail Status 2
         tx_data[18] = 0;    // 15: Fail Status 3
         tx_data[19] = 0;    // 16: Leader Alarm 1
@@ -222,7 +220,6 @@ int example_main()
       // Trigger Leader Alarm 1
       case 3:
         tx_data[4] = 0xFF;  // 1: Fail Status 1
-        tx_data[5] = 0;     // 2: Leader Battery Status
         tx_data[17] = 0xFF; // 14: Fail Status 2
         tx_data[18] = 0;    // 15: Fail Status 3
         tx_data[19] = 0xFF; // 16: Leader Alarm 1
