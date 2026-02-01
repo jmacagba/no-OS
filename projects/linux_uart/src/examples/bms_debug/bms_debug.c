@@ -40,16 +40,19 @@ uint8_t calculateChecksum(uint8_t data[], uint8_t bytes);
 
 int example_main()
 {
-	int ret = 0;
-  uint8_t rx_data[6] = {0}; // Fix command size to 6 bytes
+  int ret = 0;
+  uint8_t rx_data[6] = {0};  // Fix command size to 6 bytes
   uint8_t tx_data[60] = {0}; // Holder for transmit data
+
+  uint8_t ctr_batch = 0;
+  uint8_t diag_mode = 0;
 
   // Data Frame
   uint8_t start_command = 0x02; // Fixed Value
-  uint8_t bm_id = 0x01; // Default Value only
-  uint8_t command_code = 0; // Default value only
-  uint8_t num_of_data = 0; // Default value only
-  uint8_t checksum = 0; // Default value only
+  uint8_t bm_id = 0x01;         // Default Value only
+  uint8_t command_code = 0;     // Default value only
+  uint8_t num_of_data = 0;      // Default value only
+  uint8_t checksum = 0;         // Default value only
 
   struct no_os_uart_desc *uart;
   no_os_uart_init(&uart, &uip);
@@ -58,7 +61,7 @@ int example_main()
 
   printf("Emulate LIPY401 BMS: \n");
 
-  while(1)
+  while (1)
   {
     ret = no_os_uart_read(uart, rx_data, 5);
     printf("ret: %d\n", ret);
@@ -69,207 +72,200 @@ int example_main()
     }
 
     printf("\nReceived: ");
-    for (int i=0; i<5; i++)
+    for (int i = 0; i < 5; i++)
     {
       printf("%0x ", rx_data[i]);
     }
     printf("\n");
 
-    bm_id = rx_data[1]; // Byte 2
+    bm_id = rx_data[1];        // Byte 2
     command_code = rx_data[2]; // Byte 3
     no_os_mdelay(10);
-    // Sample Data Frame for Fail Status 1, Fail Status 2
-    if((command_code == 0x01) || (command_code == 0x13))
+
+    if (command_code == 0x20) // Summary Data
     {
-      num_of_data = 1; // Only 1 Byte
+      if ((batch_ctr > 0) && (0 == (batch_ctr % 4)))
+      {
+        diag_mode++;
+      }
+
+      if ((diag_mode > 0) && (0 == (diag_mode % 4)))
+      {
+        batch_ctr = 0;
+        diag_mode = 0;
+      }
+
+      num_of_data = 50; // 50 bytes
       tx_data[0] = start_command;
       tx_data[1] = bm_id;
       tx_data[2] = command_code;
       tx_data[3] = num_of_data;
-      tx_data[4] = 1;
 
-      checksum = calculateChecksum(tx_data, 5);
-      tx_data[5] = checksum;
-      tx_data[6] = 0; // Reserved
+      tx_data[27] = 1;    // 24: Num Connected BM
+      tx_data[32] = 0x01; // 29: BM ID Voltage Max
+      tx_data[35] = 0x01; // 32: BM ID Voltage Min
+      tx_data[44] = 0x02; // 41: BM ID Curernt Max
+      tx_data[47] = 0x02; // 44: BM ID Current Min
 
-      no_os_uart_write(uart, tx_data, 7);
+      switch (batch_ctr % 4)
+      {
+      case 0:
+        // 20V
+        tx_data[30] = 0x00; // 27: BM Voltage Max Hi
+        tx_data[31] = 0x14; // 28: BM Voltage Max Lo
 
-      printf("\nTransmit: ");
-      for (int i=0; i<7; i++) {
-        printf("%0x ", tx_data[i]);
+        // 10V
+        tx_data[33] = 0x00; // 30: BM Voltage Min Hi
+        tx_data[34] = 0x0A; // 31: BM Voltage Min Lo
+
+        // -10A
+        tx_data[42] = 0xFF; // 39: BM Current Max Hi
+        tx_data[43] = 0xFF; // 40: BM Current Max Lo
+
+        // -20A
+        tx_data[45] = 0xFF; // 42: BM Current Min Hi
+        tx_data[46] = 0xFE; // 43: BM Current Min Lo
+        break;
+
+      case 1:
+        // 15V
+        tx_data[30] = 0x00; // 27: BM Voltage Max Hi
+        tx_data[31] = 0x0F; // 28: BM Voltage Max Lo
+
+        // 5V
+        tx_data[33] = 0x00; // 30: BM Voltage Min Hi
+        tx_data[34] = 0x05; // 31: BM Voltage Min Lo
+
+        // 0A
+        tx_data[42] = 0x00; // 39: BM Current Max Hi
+        tx_data[43] = 0x00; // 40: BM Current Max Lo
+
+        // -10A
+        tx_data[45] = 0xFF; // 42: BM Current Min Hi
+        tx_data[46] = 0xFF; // 43: BM Current Min Lo
+        break;
+
+      case 2:
+        // 10V
+        tx_data[30] = 0x00; // 27: BM Voltage Max Hi
+        tx_data[31] = 0x0A; // 28: BM Voltage Max Lo
+
+        // 0V
+        tx_data[33] = 0x00; // 30: BM Voltage Min Hi
+        tx_data[34] = 0x00; // 31: BM Voltage Min Lo
+
+        // 10A
+        tx_data[42] = 0x00; // 39: BM Current Max Hi
+        tx_data[43] = 0x01; // 40: BM Current Max Lo
+
+        // 0A
+        tx_data[45] = 0x00; // 42: BM Current Min Hi
+        tx_data[46] = 0x00; // 43: BM Current Min Lo
+        break;
+
+      case 3:
+        // 15V
+        tx_data[30] = 0x00; // 27: BM Voltage Max Hi
+        tx_data[31] = 0x0F; // 28: BM Voltage Max Lo
+
+        // 5V
+        tx_data[33] = 0x00; // 30: BM Voltage Min Hi
+        tx_data[34] = 0x05; // 31: BM Voltage Min Lo
+
+        // 0A
+        tx_data[42] = 0x00; // 39: BM Current Max Hi
+        tx_data[43] = 0x00; // 40: BM Current Max Lo
+
+        // -10A
+        tx_data[45] = 0xFF; // 42: BM Current Min Hi
+        tx_data[46] = 0xFF; // 43: BM Current Min Lo
+        break;
+
+      default:
+        // Code should not go here.
+        break;
       }
-      printf("\n");
-    }
-    else if (command_code == 0x02) // Cell Voltage
-    {
-      num_of_data = 16; // 16 bytes
-      tx_data[0] = start_command;
-      tx_data[1] = bm_id;
-      tx_data[2] = command_code;
-      tx_data[3] = num_of_data;
-      tx_data[4] = 1;
-      tx_data[5] = 1;
-      tx_data[6] = 1;
-      tx_data[7] = 1;
-      tx_data[8] = 1;
-      tx_data[9] = 1;
-      tx_data[10] = 1;
-      tx_data[11] = 1;
-      tx_data[12] = 1;
-      tx_data[13] = 1;
-      tx_data[14] = 1;
-      tx_data[15] = 1;
-      tx_data[16] = 1;
-      tx_data[17] = 1;
-      tx_data[18] = 1;
-      tx_data[19] = 1;
-      
-      checksum = calculateChecksum(tx_data, 20);
-      tx_data[20] = checksum;
-      tx_data[21] = 0; // Reserved
+      batch_ctr++;
 
-      no_os_uart_write(uart, tx_data, 22);
+      switch (diag_mode)
+      {
+      // Normal Status
+      case 0:
+        tx_data[4] = 0;  // 1: Fail Status 1
+        tx_data[5] = 0;  // 2: Leader Battery Status
+        tx_data[17] = 0; // 14: Fail Status 2
+        tx_data[18] = 0; // 15: Fail Status 3
+        tx_data[19] = 0; // 16: Leader Alarm 1
+        tx_data[20] = 0; // 17: Leader Alarm 2
+        break;
 
-      printf("\nTransmit: ");
-      for (int i=0; i<22; i++) {
-        printf("%0x ", tx_data[i]);
+      // Trigger Fail Status 1
+      case 1:
+        tx_data[4] = 0xFF; // 1: Fail Status 1
+        tx_data[5] = 0;    // 2: Leader Battery Status
+        tx_data[17] = 0;   // 14: Fail Status 2
+        tx_data[18] = 0;   // 15: Fail Status 3
+        tx_data[19] = 0;   // 16: Leader Alarm 1
+        tx_data[20] = 0;   // 17: Leader Alarm 2
+        break;
+
+      // Trigger Fail Status 2
+      case 2:
+        tx_data[4] = 0xFF;  // 1: Fail Status 1
+        tx_data[5] = 0;     // 2: Leader Battery Status
+        tx_data[17] = 0xFF; // 14: Fail Status 2
+        tx_data[18] = 0;    // 15: Fail Status 3
+        tx_data[19] = 0;    // 16: Leader Alarm 1
+        tx_data[20] = 0;    // 17: Leader Alarm 2
+        break;
+
+      // Trigger Leader Alarm 1
+      case 3:
+        tx_data[4] = 0xFF;  // 1: Fail Status 1
+        tx_data[5] = 0;     // 2: Leader Battery Status
+        tx_data[17] = 0xFF; // 14: Fail Status 2
+        tx_data[18] = 0;    // 15: Fail Status 3
+        tx_data[19] = 0xFF; // 16: Leader Alarm 1
+        tx_data[20] = 0;    // 17: Leader Alarm 2
+        break;
+
+      default:
+        // Code should not go here.
+        break;
       }
-      printf("\n");
-    }
-    else if((command_code == 0x03) || (command_code == 0x04) || (command_code == 0x05) || (command_code == 0x11))     // For Current, Temperature, RC, FCC
-    {
-      num_of_data = 2; // Only 2 Bytes
-      tx_data[0] = start_command;
-      tx_data[1] = bm_id;
-      tx_data[2] = command_code;
-      tx_data[3] = num_of_data;
-      tx_data[4] = 1;
-      tx_data[5] = 1;
 
-      checksum = calculateChecksum(tx_data, 6);
-      tx_data[6] = checksum;
-      tx_data[7] = 0; // Reserved
-
-      no_os_uart_write(uart, tx_data, 8);
-
-      printf("\nTransmit: ");
-      for (int i=0; i<8; i++) {
-        printf("%0x ", tx_data[i]);
-      }
-      printf("\n");
-    }
-    else if (command_code == 0x20) // Summary Data
-    {
-      // Mock Summary Data from UART
-      num_of_data = 50; //50 bytes
-
-      // 0x02 0x01 0x20 0x32
-      tx_data[0] = 0x02;
-      tx_data[1] = 0x01;
-      tx_data[2] = 0x20;
-      tx_data[3] = 0x32;
-  
-      // 0x40 0x03 0x63 0x63 0x64
-      tx_data[4] = 0x40;
-      tx_data[5] = 0x03;
-      tx_data[6] = 0x63;
-      tx_data[7] = 0x63;
-      tx_data[8] = 0x64;
-
-      // 0x00 0xD5 0x00 0x00 0x00
-      tx_data[9] = 0x00;
-      tx_data[10] = 0xD5;
-      tx_data[11] = 0x00;
-      tx_data[12] = 0x00;
-      tx_data[13] = 0x00;
-
-      // 0x00 0x68 0x10 0x00 0x00
-      tx_data[14] = 0x00;
-      tx_data[15] = 0x68;
-      tx_data[16] = 0x10;
-      tx_data[17] = 0x00;
-      tx_data[18] = 0x00;
-
-      // 0x00 0x00 0x08 0x34 0x08
-      tx_data[19] = 0x00;
-      tx_data[20] = 0x00;
-      tx_data[21] = 0x08;
-      tx_data[22] = 0x34;
-      tx_data[23] = 0x08;
-
-      // 0x34 0x08 0x33 0x01 0x13
-      tx_data[24] = 0x34;
-      tx_data[25] = 0x08;
-      tx_data[26] = 0x33;
-      tx_data[27] = 0x01;
-      tx_data[28] = 0x13;
-
-      // 0x10 0x68 0x10 0x01 0x68
-      tx_data[29] = 0x10;;
-      tx_data[30] = 0x68;
-      tx_data[31] = 0x10;
-      tx_data[32] = 0x01;
-      tx_data[33] = 0x68;
-
-      // 0x10 0x01 0x00 0xD7 0x01
-      tx_data[34] = 0x10;
-      tx_data[35] = 0x01;
-      tx_data[36] = 0x00;
-      tx_data[37] = 0xD7;
-      tx_data[38] = 0x01;
-
-      // 0x00 0xD5 0x01 0x00 0x00
-      tx_data[39] = 0x00;
-      tx_data[40] = 0xD5;
-      tx_data[41] = 0x01;
-      tx_data[42] = 0x00;
-      tx_data[43] = 0x00;
-
-      // 0x01 0x00 0x00 0x01 0x0D
-      tx_data[44] = 0x01;;
-      tx_data[45] = 0x00;
-      tx_data[46] = 0x00;
-      tx_data[47] = 0x01;
-      tx_data[48] = 0x0D;
-
-      // 0x05 0x01 0x0C 0xFD 0x01
-      tx_data[49] = 0x05;
-      tx_data[50] = 0x01;
-      tx_data[51] = 0x0C;
-      tx_data[52] = 0xFD;
-      tx_data[53] = 0x01;
-
-      // 0x59 0x00
-      tx_data[54] = 0x59;
-      tx_data[55] = 0x00;
+      checksum = calculateChecksum(tx_data, 54);
+      tx_data[54] = checksum;
+      tx_data[55] = 0; // Reserved
 
       no_os_uart_write(uart, tx_data, 56);
 
       printf("\nTransmit: ");
-      for (int i=0; i<56; i++) {
+      for (int i = 0; i < 56; i++)
+      {
         printf("%0x ", tx_data[i]);
       }
     }
-    
+
     // Reset RX and TX
     memset(tx_data, 0, sizeof(tx_data));
     memset(rx_data, 0, sizeof(rx_data));
   }
 
-	printf("\n");
-	no_os_uart_remove(uart);
+  printf("\n");
+  no_os_uart_remove(uart);
 
-	return 0;
+  return 0;
 }
 
 uint8_t calculateChecksum(uint8_t data[], uint8_t bytes)
 {
   uint8_t checksum = 0;
-  for(int i = 0; i<bytes; i++)
+  for (int i = 0; i < bytes; i++)
   {
     checksum = checksum ^ data[i];
   }
   printf("Checksum = %d\n", checksum);
-  return checksum;
 
+  return checksum;
 }
