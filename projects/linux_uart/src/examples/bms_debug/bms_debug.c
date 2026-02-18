@@ -84,14 +84,14 @@ int example_main()
 
     if (command_code == 0x20) // Summary Data
     {
-      if ((batch_ctr > 0) && (0 == (batch_ctr % 4)))
+      if ((ctr_batch > 0) && (0 == (ctr_batch % 4)))
       {
         diag_mode++;
       }
 
       if ((diag_mode > 0) && (0 == (diag_mode % 4)))
       {
-        batch_ctr = 0;
+        ctr_batch = 0;
         diag_mode = 0;
       }
 
@@ -108,7 +108,7 @@ int example_main()
       tx_data[44] = 0x02; // 41: BM ID Curernt Max
       tx_data[47] = 0x02; // 44: BM ID Current Min
 
-      switch (batch_ctr % 4)
+      switch (ctr_batch % 4)
       {
       case 0:
         // 20V
@@ -186,7 +186,7 @@ int example_main()
         // Code should not go here.
         break;
       }
-      batch_ctr++;
+      ctr_batch++;
 
       switch (diag_mode)
       {
